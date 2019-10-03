@@ -1,0 +1,32 @@
+{
+  "entrypoint": "index.html",
+  "shell": "src/app.js",
+  "sources": [
+    "images/**/*"
+  ],
+  "extraDependencies": [
+    "manifest.json",
+    "node_modules/@webcomponents/webcomponentsjs/**"
+  ],
+  "builds": [
+    {
+      "browserCapabilities": [
+        "es2017",
+        "modules"
+      ],
+      "js": {
+        "minify": true
+      },
+      "css": {
+        "minify": true
+      },
+      "html": {
+        "minify": true
+      },
+      "bundle": true,
+      "addServiceWorker": true
+    }
+  ],
+  "moduleResolution": "node",
+  "npm": true
+}

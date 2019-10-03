@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <title>Lotus Cleaning</title>
+    <base href="/">
+
+    <link rel="manifest" href="manifest.json">
+
+    <meta name="theme-color" content="#000">
+
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="Lotus Cleaning">
+
+    <meta name="apple-touch-fullscreen" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Lotus Cleaning">
+
+    <meta name="description" content="клининг уборка cleaning минск помыть окна" />
+
+    <link rel="apple-touch-icon" href="/images/icon-192x192.png">
+
+    <link rel="shortcut icon" href="/images/favicon.ico" type="image/x-icon">
+    <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+          navigator.serviceWorker.register('service-worker.js', {
+            scope: '/',
+          });
+        });
+      }
+    </script>
+    <style>
+        * {
+            padding: 0;
+            margin: 0;
+            box-sizing: border-box;
+            font-family: Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";
+        }
+        html, body {
+            width: 100vw;
+            height: 100vh;
+        }
+    </style>
+</head>
+<body>
+    <app-component></app-component>
+    <script src="node_modules/@webcomponents/webcomponentsjs/webcomponents-loader.js"></script>
+    <script type="module" src="src/app.js"></script>
+</body>
+</html>
