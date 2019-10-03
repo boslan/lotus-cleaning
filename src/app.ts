@@ -1,6 +1,19 @@
-import {customElement, LitElement, TemplateResult, html, css, CSSResult, property} from 'lit-element'
+import {customElement, LitElement, TemplateResult, html, css, CSSResult, property, query} from 'lit-element'
 import {installRouter} from './utils/router'
 import {installOfflineWatcher} from './utils/network'
+
+import {firebase} from './utils/firebase';
+import {notifications} from './utils/notifications';
+
+import './normal-page';
+import './windows-page';
+import './dashboard-page';
+import './help-page';
+
+const NORMAL = 'normal';
+const WINDOWS = 'windows';
+const DASHBOARD = 'dashboard';
+const HELP = 'help';
 
 @customElement('app-component')
 export class AppComponent extends LitElement {
@@ -11,7 +24,128 @@ export class AppComponent extends LitElement {
     public active = false;
 
     @property()
+    public notification!: string;
+
+    @property()
     public path!: string;
+
+    @property()
+    public isAdmin = true;
+
+    @property()
+    public user;
+
+    @query('#email')
+    public emailInput!: HTMLInputElement;
+
+    @query('#password')
+    public passwordInput!: HTMLInputElement;
+
+    connectedCallback(): void {
+        super.connectedCallback();
+        installRouter((location: Location) => {
+            this.path = location.pathname
+        });
+        installOfflineWatcher((offline: boolean) => (this.isOffline = offline));
+        if (!this.path.slice(1)) {
+            this.path = `/${NORMAL}`;
+            window.history.replaceState({}, '', `/${NORMAL}`);
+        }
+        notifications().subscribe((message: string) => {
+            this.notification = message;
+            setTimeout(() => {
+                this.notification = null
+            }, 3000);
+        });
+
+        firebase.auth().onAuthStateChanged((user) => {
+            if (user) {
+                this.user = user;
+            }
+        });
+
+    }
+
+    public toggleMenu(): void {
+        this.active = !this.active
+    }
+
+    public signUp(): void {
+        const email: string = this.emailInput.value;
+        const password: string = this.passwordInput.value;
+        firebase.auth().createUserWithEmailAndPassword(email, password).catch(() => {
+            notifications().notify(`Неправильное имя пользователя или пароль`)
+        });
+    }
+
+    public signIn(): void {
+        const email: string = this.emailInput.value;
+        const password: string = this.passwordInput.value;
+        firebase.auth().signInWithEmailAndPassword(email, password).catch(() => {
+            notifications().notify(`Неправильное имя пользователя или пароль`)
+        });
+    }
+
+    public signOut(): void {
+        firebase.auth().signOut().then(() => {
+            this.user = null;
+        });
+    }
+
+    public render(): TemplateResult {
+        // language=HTML
+        return html`
+      <header>
+        <picture @click="${(): void => this.toggleMenu()}">
+            <source srcset="./images/logo-full.svg" media="(min-width: 600px)">
+            <img src="./images/logo-short.svg" alt="Lotus">
+        </picture>
+        <nav ?active="${this.active}">
+          <ul class="menu">
+            ${this.isAdmin ? html`
+            <li class="menu-item" ?active="${this.path === `/${DASHBOARD}`}">
+                <a class="link" href="${DASHBOARD}" @click="${(): void => this.toggleMenu()}">Панель управления</a>
+            </li>` : ''}
+            <li class="menu-item" ?active="${this.path === `/${NORMAL}`}" >
+                <a class="link" href="${NORMAL}" @click="${(): void => this.toggleMenu()}">Обычная</a>
+            </li>
+            <li class="menu-item" ?active="${this.path === `/${WINDOWS}`}">
+                <a class="link" href="${WINDOWS}" @click="${(): void => this.toggleMenu()}">Окна</a>
+            </li>
+            <li class="menu-item" ?active="${this.path === `/${HELP}`}">
+                <a class="link" href="${HELP}" @click="${(): void => this.toggleMenu()}">Справка</a>
+            </li>
+          </ul>
+        </nav>
+        ${!this.user ? html`
+        <form class="login-form" action="#">
+            <input id="email" type="text" placeholder="email">
+            <input id="password" type="password" placeholder="password">
+            <div class="buttons-container">
+                <button type="button" class="sign-in" @click="${(): void => this.signIn()}">Войти</button>
+                <button type="button" class="sign-up" @click="${(): void => this.signUp()}">Зарегистрироваться</button>
+            </div>
+        </form>` : html`
+        <button class="sign-out" @click="${(): void => this.signOut()}">Выйти</button>
+        `}
+        <address>
+            <a class="link" href="tel:+375445846206">+375 (44) 584 62 06</a>
+        </address>
+        
+      ${this.notification ? html`<div class="notification">${this.notification}</div>` : ''}
+      </header>
+      ${this.isOffline ? html`<div class="offline-indicator">Offline</div>` : ''}
+      
+      ${this.path === `/${NORMAL}` ? html`<normal-page></normal-page>` : ''}
+      ${this.path === `/${WINDOWS}` ? html`<windows-page></windows-page>` : ''}
+      ${this.path === `/${DASHBOARD}` ? html`<dashboard-page></dashboard-page>` : ''}
+      ${this.path === `/${HELP}` ? html`<help-page></help-page>` : ''}
+      
+      <footer>
+        <div class="info">УНП 500563252</div>
+      </footer>
+      `
+    }
 
     static get styles(): CSSResult {
         // language=CSS
@@ -23,21 +157,9 @@ export class AppComponent extends LitElement {
                 height: 100%;
             }
 
-            section {
-                display: flex;
-                flex: 1;
-                padding: 10px;
-            }
-
-            .offline-indicator {
-                text-align: center;
-                width: 100%;
-                color: white;
-                background-color: #930000;
-            }
-
             header {
                 position: relative;
+                flex-wrap: wrap;
             }
 
             header,
@@ -50,12 +172,6 @@ export class AppComponent extends LitElement {
                 color: white;
             }
 
-            picture {
-                margin: 1em;
-                cursor: pointer;
-                outline: none;
-            }
-
             picture,
             nav,
             address {
@@ -63,14 +179,20 @@ export class AppComponent extends LitElement {
                 justify-content: center;
             }
 
+            picture {
+                margin: 1em;
+                cursor: pointer;
+                outline: none;
+            }
+
             nav {
                 flex: 2;
                 align-items: flex-start;
                 position: absolute;
                 left: 0;
-                top: 100%;
-                height: calc(100vh - 100%);
-                width: 160px;
+                top: 60px;
+                height: calc(100vh - 60px);
+                width: 260px;
                 transform: translateX(-100%);
                 transition: transform .3s;
                 transform-origin: left;
@@ -100,8 +222,50 @@ export class AppComponent extends LitElement {
                 text-decoration: none;
                 font-weight: bold;
                 font-size: 20px;
-                text-transform: capitalize;
                 white-space: nowrap;
+            }
+            
+            .login-form {
+                padding: 0 10px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+            
+            .login-form .buttons-container {
+                margin: 10px;
+            }
+            
+            .login-form input {
+                margin: 10px;
+                background: #000;
+                color: #fff;
+                border: 0;
+                padding: 8px 5px;
+                box-shadow: 0 1px 0 0 #fff;
+            }
+            
+            .login-form input:focus {
+                box-shadow: 0 2px 0 0 #fff;
+            }
+            
+            .sign-in,
+            .sign-up,
+            .sign-out {
+                margin: 5px;
+                background: black;
+                border: 0;
+                border-radius: 5px;
+                color: white;
+                padding: 5px 10px;
+                box-shadow: 0 0 0 1px #fff;
+                cursor: pointer;
+            }
+            .sign-in:hover,
+            .sign-up:hover,
+            .sign-out:hover {
+                box-shadow: 0 0 0 2px #fff;
             }
 
             address {
@@ -126,7 +290,30 @@ export class AppComponent extends LitElement {
                 padding: 14px;
             }
 
+            .offline-indicator {
+                text-align: center;
+                width: 100%;
+                color: white;
+                background-color: #930000;
+            }
+
+            .notification {
+                position: absolute;
+                top: calc(100% + 10px);
+                right: 20px;
+                left: 20px;
+                padding: 15px;
+                border-radius: 10px;
+                box-shadow: 0 0 5px 0 #930000;
+                color: white;
+                background-color: #930000;
+            }
+
             @media (min-width: 600px) {
+                .notification {
+                    left: auto;
+                }
+                
                 picture {
                     flex: 1;
                 }
@@ -151,69 +338,5 @@ export class AppComponent extends LitElement {
                 }
             }
         `
-    }
-
-    connectedCallback(): void {
-        super.connectedCallback()
-        installRouter((location: Location) => {
-            this.path = location.pathname
-        })
-        installOfflineWatcher((offline: boolean) => (this.isOffline = offline))
-        window.history.replaceState({}, '', '/default')
-        this.path = '/default'
-    }
-
-    public render(): TemplateResult {
-        // language=HTML
-        return html`
-      <header>
-        <picture @click="${() => this.toggleMenu()}">
-            <source srcset="./images/logo-full.svg" media="(min-width: 600px)">
-            <img src="./images/logo-short.svg" alt="Lotus">
-        </picture>
-        <nav ?active="${this.active}">
-          <ul class="menu">
-            <li class="menu-item" ?active="${this.path === '/default'}" @click="${() => this.toggleMenu()}"><a class="link" href="default">Обычная</a></li>
-            <li class="menu-item" ?active="${this.path === '/windows'}" @click="${() => this.toggleMenu()}"><a class="link" href="windows"">Окна</a></li>
-            <li class="menu-item" ?active="${this.path === '/help'}" @click="${() => this.toggleMenu()}"><a class="link" href="help">Справка</a></li>
-          </ul>
-        </nav>
-        <address>
-            <a class="link" href="tel:+375445846206">+375 (44) 584 62 06</a>
-        </address>
-      </header>
-      ${this.isOffline ? html`<div class="offline-indicator">Offline</div>` : ''}
-      
-      
-      ${this.path === '/default' ? html`
-      <section>
-        Обычная уборка
-      </section>
-      ` : ''}
-      
-      ${this.path === '/windows' ? html`
-      <section>
-        Окна
-      </section>
-      ` : ''}
-      
-      ${this.path === '/help' ? html`
-      <section>
-        Справка
-      </section>
-      ` : ''}
-      
-      <footer>
-        <div class="info">УНП 192692068, свидетельство выдано минским горисполкомом 17 августа 2016. Юридический адрес: Республика Беларусь, г. Минск, ул. Октябрьская 21-111. Режим работы: 8:00 - 23:00 Почта для связи: kittcleaning@gmail.com</div>
-      </footer>
-      `
-    }
-
-    public goTo(view: string): void {
-        window.location.href = view
-    }
-
-    public toggleMenu(): void {
-        this.active = !this.active
     }
 }

@@ -6,6 +6,7 @@
   "license": "UNLICENSED",
   "dependencies": {
     "@webcomponents/webcomponentsjs": "^2.3.0",
+    "firebase": "^7.0.0",
     "lit-element": "^2.2.1"
   },
   "devDependencies": {
