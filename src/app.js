@@ -45,6 +45,11 @@ let AppComponent = class AppComponent extends LitElement {
                 this.user = user;
             }
         });
+        const actionCode = new RegExp(/[?&]oobCode=([^&#]*)/)
+            .exec(window.location.search.slice(1));
+        if (actionCode) {
+            firebase.auth().applyActionCode(actionCode[1]);
+        }
     }
     toggleMenu() {
         this.active = !this.active;
@@ -52,7 +57,10 @@ let AppComponent = class AppComponent extends LitElement {
     signUp() {
         const email = this.emailInput.value;
         const password = this.passwordInput.value;
-        firebase.auth().createUserWithEmailAndPassword(email, password).catch(() => {
+        firebase.auth().createUserWithEmailAndPassword(email, password)
+            .then((userCredential) => {
+            return userCredential.user.sendEmailVerification();
+        }).catch(() => {
             notifications().notify(`Неправильное имя пользователя или пароль`);
         });
     }
@@ -93,8 +101,11 @@ let AppComponent = class AppComponent extends LitElement {
             </li>
           </ul>
         </nav>
+        <address>
+            <a class="link" href="tel:+375445846206">+375 (44) 584 62 06</a>
+        </address>
         ${!this.user ? html `
-        <form class="login-form" action="#">
+        <form class="login-form">
             <input id="email" type="text" placeholder="email">
             <input id="password" type="password" placeholder="password">
             <div class="buttons-container">
@@ -104,9 +115,6 @@ let AppComponent = class AppComponent extends LitElement {
         </form>` : html `
         <button class="sign-out" @click="${() => this.signOut()}">Выйти</button>
         `}
-        <address>
-            <a class="link" href="tel:+375445846206">+375 (44) 584 62 06</a>
-        </address>
         
       ${this.notification ? html `<div class="notification">${this.notification}</div>` : ''}
       </header>
@@ -219,12 +227,22 @@ let AppComponent = class AppComponent extends LitElement {
                 border: 0;
                 padding: 8px 5px;
                 box-shadow: 0 1px 0 0 #fff;
+                outline: none;
+            }
+
+            input:-webkit-autofill,
+            input:-webkit-autofill:hover,
+            input:-webkit-autofill:focus,
+            input:-webkit-autofill:active {
+                border: 0;
+                -webkit-text-fill-color: #fff;
+                transition: background-color 5000s ease-in-out 0s;
             }
             
             .login-form input:focus {
                 box-shadow: 0 2px 0 0 #fff;
             }
-            
+
             .sign-in,
             .sign-up,
             .sign-out {
@@ -236,6 +254,7 @@ let AppComponent = class AppComponent extends LitElement {
                 padding: 5px 10px;
                 box-shadow: 0 0 0 1px #fff;
                 cursor: pointer;
+                outline: none;
             }
             .sign-in:hover,
             .sign-up:hover,
