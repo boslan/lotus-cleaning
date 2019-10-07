@@ -5,16 +5,14 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
 import { LitElement, html, customElement } from 'lit-element';
+import { pageStyle } from './page-style';
 let DashboardPage = class DashboardPage extends LitElement {
+    static get styles() {
+        return [pageStyle];
+    }
     render() {
-        return html `
-            <style>
-                :host {
-                    display: flex;
-                    flex: 1;
-                }
-            </style>
-            Dashboard`;
+        // language=HTML
+        return html `Панель управления`;
     }
 };
 DashboardPage = __decorate([

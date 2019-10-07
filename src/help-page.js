@@ -6,18 +6,14 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 };
 import { LitElement, html, customElement } from 'lit-element';
 import './order-form';
+import { pageStyle } from './page-style';
 let WindowsPage = class WindowsPage extends LitElement {
+    static get styles() {
+        return [pageStyle];
+    }
     render() {
         // language=HTML
-        return html `
-            <style>
-                :host {
-                    display: flex;
-                    flex: 1;
-                }
-            </style>
-            Помощь
-        `;
+        return html `Помощь`;
     }
 };
 WindowsPage = __decorate([

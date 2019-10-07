@@ -1,15 +1,14 @@
-import {LitElement, TemplateResult, html, customElement} from 'lit-element';
+import { LitElement, TemplateResult, html, customElement, CSSResultArray } from 'lit-element';
+import { pageStyle } from './page-style';
 
 @customElement('dashboard-page')
 export class DashboardPage extends LitElement {
+    static get styles(): CSSResultArray {
+        return [pageStyle];
+    }
+
     public render(): TemplateResult {
-        return html`
-            <style>
-                :host {
-                    display: flex;
-                    flex: 1;
-                }
-            </style>
-            Dashboard`;
+        // language=HTML
+        return html`Панель управления`;
     }
 }

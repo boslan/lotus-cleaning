@@ -22,6 +22,7 @@ let AppComponent = class AppComponent extends LitElement {
         super(...arguments);
         this.isOffline = false;
         this.active = false;
+        this.isLoginFormOpened = false;
         this.isAdmin = true;
     }
     connectedCallback() {
@@ -54,20 +55,29 @@ let AppComponent = class AppComponent extends LitElement {
     toggleMenu() {
         this.active = !this.active;
     }
+    loginFormToggle() {
+        this.isLoginFormOpened = !this.isLoginFormOpened;
+    }
     signUp() {
         const email = this.emailInput.value;
         const password = this.passwordInput.value;
         firebase.auth().createUserWithEmailAndPassword(email, password)
             .then((userCredential) => {
+            this.isLoginFormOpened = false;
             return userCredential.user.sendEmailVerification();
-        }).catch(() => {
+        })
+            .catch(() => {
             notifications().notify(`Неправильное имя пользователя или пароль`);
         });
     }
     signIn() {
         const email = this.emailInput.value;
         const password = this.passwordInput.value;
-        firebase.auth().signInWithEmailAndPassword(email, password).catch(() => {
+        firebase.auth().signInWithEmailAndPassword(email, password)
+            .then(() => {
+            this.isLoginFormOpened = false;
+        })
+            .catch(() => {
             notifications().notify(`Неправильное имя пользователя или пароль`);
         });
     }
@@ -79,16 +89,17 @@ let AppComponent = class AppComponent extends LitElement {
     render() {
         // language=HTML
         return html `
-      <header>
-        <picture @click="${() => this.toggleMenu()}">
+        <header>
+        <div class="logo" @click="${() => this.loginFormToggle()}">Lotus</div>
+        <!--        <picture @click="${() => this.toggleMenu()}">
             <source srcset="./images/logo-full.svg" media="(min-width: 600px)">
             <img src="./images/logo-short.svg" alt="Lotus">
-        </picture>
+        </picture> -->
         <nav ?active="${this.active}">
           <ul class="menu">
             ${this.isAdmin ? html `
             <li class="menu-item" ?active="${this.path === `/${DASHBOARD}`}">
-                <a class="link" href="${DASHBOARD}" @click="${() => this.toggleMenu()}">Панель управления</a>
+                <a class="link" href="${DASHBOARD}" @click="${() => this.toggleMenu()}">Заказы</a>
             </li>` : ''}
             <li class="menu-item" ?active="${this.path === `/${NORMAL}`}" >
                 <a class="link" href="${NORMAL}" @click="${() => this.toggleMenu()}">Обычная</a>
@@ -101,11 +112,11 @@ let AppComponent = class AppComponent extends LitElement {
             </li>
           </ul>
         </nav>
-        <address>
-            <a class="link" href="tel:+375445846206">+375 (44) 584 62 06</a>
-        </address>
+        <!--        <address>-->
+        <!--            <a class="link" href="tel:+375445846206">+375 (44) 584 62 06</a>-->
+        <!--        </address>-->
         ${!this.user ? html `
-        <form class="login-form">
+        <form class="login-form" ?opened="${this.isLoginFormOpened}">
             <input id="email" type="text" placeholder="email">
             <input id="password" type="password" placeholder="password">
             <div class="buttons-container">
@@ -115,20 +126,19 @@ let AppComponent = class AppComponent extends LitElement {
         </form>` : html `
         <button class="sign-out" @click="${() => this.signOut()}">Выйти</button>
         `}
+        ${this.notification ? html `<div class="notification">${this.notification}</div>` : ''}
+        </header>
+        ${this.isOffline ? html `<div class="offline-indicator">Offline</div>` : ''}
         
-      ${this.notification ? html `<div class="notification">${this.notification}</div>` : ''}
-      </header>
-      ${this.isOffline ? html `<div class="offline-indicator">Offline</div>` : ''}
-      
-      ${this.path === `/${NORMAL}` ? html `<normal-page></normal-page>` : ''}
-      ${this.path === `/${WINDOWS}` ? html `<windows-page></windows-page>` : ''}
-      ${this.path === `/${DASHBOARD}` ? html `<dashboard-page></dashboard-page>` : ''}
-      ${this.path === `/${HELP}` ? html `<help-page></help-page>` : ''}
-      
-      <footer>
+        ${this.path === `/${NORMAL}` ? html `<normal-page></normal-page>` : ''}
+        ${this.path === `/${WINDOWS}` ? html `<windows-page></windows-page>` : ''}
+        ${this.path === `/${DASHBOARD}` ? html `<dashboard-page></dashboard-page>` : ''}
+        ${this.path === `/${HELP}` ? html `<help-page></help-page>` : ''}
+        
+        <footer>
         <div class="info">УНП 500563252</div>
-      </footer>
-      `;
+        </footer>
+        `;
     }
     static get styles() {
         // language=CSS
@@ -151,8 +161,8 @@ let AppComponent = class AppComponent extends LitElement {
             .menu {
                 display: flex;
                 align-items: center;
-                background: #000;
-                color: white;
+                background: #fff;
+                color: #000;
             }
 
             picture,
@@ -168,30 +178,28 @@ let AppComponent = class AppComponent extends LitElement {
                 outline: none;
             }
 
+            .logo {
+                display: flex;
+                flex: 1;
+                justify-content: center;
+                
+                font-size: 24px;
+                text-transform: uppercase;
+
+                margin: 1em;
+                cursor: pointer;
+                outline: none;
+            }
+
             nav {
                 flex: 2;
                 align-items: flex-start;
-                position: absolute;
-                left: 0;
-                top: 60px;
-                height: calc(100vh - 60px);
-                width: 260px;
-                transform: translateX(-100%);
-                transition: transform .3s;
-                transform-origin: left;
-            }
-
-            nav[active] {
-                transform: none;
-                box-shadow: 0 5px 10px 0px #171717;
-                border-right: 1px #1c1c1c solid;
             }
 
             .menu {
                 padding: 0;
                 margin: 0;
                 list-style-type: none;
-                flex-flow: column;
             }
 
             .menu-item {
@@ -200,66 +208,68 @@ let AppComponent = class AppComponent extends LitElement {
             }
 
             .link {
-                color: white;
+                color: #000;
                 font-style: normal;
                 text-decoration: none;
-                font-weight: bold;
-                font-size: 20px;
                 white-space: nowrap;
+                padding-bottom: 4px;
             }
-            
+
             .login-form {
-                padding: 0 10px;
                 display: flex;
                 align-items: center;
                 justify-content: center;
                 flex-wrap: wrap;
+                position: absolute;
+                left: 20px;
+                right: 20px;
+                box-shadow: 0 0 5px -3px #000;
+                padding: 20px;
+                transform: translateX(calc(-100% - 25px));
+                transition: .3s transform;
+                background: #fff;
             }
             
+            .login-form[opened] {
+                transform: none;
+            }
+
             .login-form .buttons-container {
                 margin: 10px;
             }
-            
+
             .login-form input {
                 margin: 10px;
-                background: #000;
-                color: #fff;
+                background: #fff;
+                color: #000;
                 border: 0;
                 padding: 8px 5px;
-                box-shadow: 0 1px 0 0 #fff;
+                box-shadow: 0 1px 0 0 #000;
                 outline: none;
             }
 
-            input:-webkit-autofill,
-            input:-webkit-autofill:hover,
-            input:-webkit-autofill:focus,
-            input:-webkit-autofill:active {
-                border: 0;
-                -webkit-text-fill-color: #fff;
-                transition: background-color 5000s ease-in-out 0s;
-            }
-            
             .login-form input:focus {
-                box-shadow: 0 2px 0 0 #fff;
+                box-shadow: 0 2px 0 0 #000;
             }
 
             .sign-in,
             .sign-up,
             .sign-out {
                 margin: 5px;
-                background: black;
+                background: #fff;
                 border: 0;
                 border-radius: 5px;
-                color: white;
+                color: #000;
                 padding: 5px 10px;
-                box-shadow: 0 0 0 1px #fff;
+                box-shadow: 0 0 0 1px #000;
                 cursor: pointer;
                 outline: none;
             }
+
             .sign-in:hover,
             .sign-up:hover,
             .sign-out:hover {
-                box-shadow: 0 0 0 2px #fff;
+                box-shadow: 0 0 0 2px #000;
             }
 
             address {
@@ -268,9 +278,10 @@ let AppComponent = class AppComponent extends LitElement {
             }
 
             .link:hover,
-            .menu-item:hover,
+            .menu-item:hover a,
             .menu-item[active] > a {
-                color: #E1BE3F;
+                padding-bottom: 4px;
+                box-shadow: rgb(0, 0, 0) 0 2px 0 0;
                 outline: none;
             }
 
@@ -307,7 +318,7 @@ let AppComponent = class AppComponent extends LitElement {
                 .notification {
                     left: auto;
                 }
-                
+
                 picture {
                     flex: 1;
                 }
@@ -340,6 +351,9 @@ __decorate([
 __decorate([
     property()
 ], AppComponent.prototype, "active", void 0);
+__decorate([
+    property()
+], AppComponent.prototype, "isLoginFormOpened", void 0);
 __decorate([
     property()
 ], AppComponent.prototype, "notification", void 0);

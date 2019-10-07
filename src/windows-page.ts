@@ -1,18 +1,15 @@
-import {LitElement, html, TemplateResult, customElement} from 'lit-element';
+import { LitElement, html, TemplateResult, customElement, CSSResultArray, CSSResult, css } from 'lit-element';
 import './order-form';
+import { pageStyle } from './page-style';
 
 @customElement('windows-page')
 export class WindowsPage extends LitElement {
+    static get styles(): CSSResultArray {
+        return [pageStyle];
+    }
+
     public render(): TemplateResult {
         // language=HTML
-        return html`
-            <style>
-                :host {
-                    display: flex;
-                    flex: 1;
-                }
-            </style>
-            Окна
-        `;
+        return html`Окна`;
     }
 }

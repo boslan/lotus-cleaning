@@ -5,7 +5,11 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
 import { customElement, LitElement, html } from 'lit-element';
+import { pageStyle } from './page-style';
 let OrderFormComponent = class OrderFormComponent extends LitElement {
+    static get styles() {
+        return [pageStyle];
+    }
     render() {
         // language=HTML
         return html `
