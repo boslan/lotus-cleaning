@@ -5,7 +5,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
 import { LitElement, html, customElement } from 'lit-element';
-import './order-form';
+import '../components/order-form';
 import { pageStyle } from './page-style';
 let WindowsPage = class WindowsPage extends LitElement {
     static get styles() {

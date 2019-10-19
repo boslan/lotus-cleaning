@@ -5,17 +5,17 @@ admin.initializeApp();
 
 export const processSignUp = functions.auth.user().onCreate((user: UserRecord) => {
     if (user.email &&
-        user.email.endsWith('bogdan.poslovsky@gmail.com') &&
-        user.emailVerified) {
+        user.email.endsWith('bogdan.poslovsky@gmail.com')) {
         const customClaims = {
             admin: true,
             accessLevel: 9
         };
         return admin.auth().setCustomUserClaims(user.uid, customClaims)
             .then(() => {
-                console.log(`${user.email} is admin now`);
+                const metadataRef = admin.database().ref("metadata/" + user.uid);
+                return metadataRef.set({refreshTime: new Date().getTime()});
             })
-            .catch(error => {
+            .catch((error: Error) => {
                 console.log(error);
             });
     }

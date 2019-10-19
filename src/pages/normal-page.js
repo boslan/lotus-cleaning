@@ -4,19 +4,24 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
-import { LitElement, html, customElement } from 'lit-element';
-import './order-form';
+import { LitElement, html, customElement, css } from 'lit-element';
+import '../components/order-form';
 import { pageStyle } from './page-style';
-let WindowsPage = class WindowsPage extends LitElement {
+let NormalPage = class NormalPage extends LitElement {
+    // language=CSS
     static get styles() {
-        return [pageStyle];
+        return [pageStyle, css `            
+            :host {
+                justify-content: center;
+            }
+        `];
     }
     render() {
         // language=HTML
-        return html `Помощь`;
+        return html `<order-form></order-form>`;
     }
 };
-WindowsPage = __decorate([
-    customElement('help-page')
-], WindowsPage);
-export { WindowsPage };
+NormalPage = __decorate([
+    customElement('normal-page')
+], NormalPage);
+export { NormalPage };

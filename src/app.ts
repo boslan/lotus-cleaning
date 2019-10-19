@@ -4,17 +4,18 @@ import { installOfflineWatcher } from './utils/network'
 
 import { firebase } from './utils/firebase';
 import { notifications } from './utils/notifications';
-import { UserCredential } from '@firebase/auth-types';
 
-import './normal-page';
-import './windows-page';
-import './dashboard-page';
-import './help-page';
+import { User } from 'firebase';
+import IdTokenResult = firebase.auth.IdTokenResult;
+import UserCredential = firebase.auth.UserCredential;
+import {lazyLoad} from "./utils/lazy-load";
 
 const NORMAL = 'normal';
 const WINDOWS = 'windows';
 const DASHBOARD = 'dashboard';
 const HELP = 'help';
+
+const CODE_REGEXP = new RegExp(/[?&]oobCode=([^&#]*)/);
 
 @customElement('app-component')
 export class AppComponent extends LitElement {
@@ -31,13 +32,13 @@ export class AppComponent extends LitElement {
     public notification!: string;
 
     @property()
-    public path!: string;
+    public page!: string;
 
     @property()
     public isAdmin = true;
 
     @property()
-    public user;
+    public user: User;
 
     @query('#email')
     public emailInput!: HTMLInputElement;
@@ -48,38 +49,61 @@ export class AppComponent extends LitElement {
     connectedCallback(): void {
         super.connectedCallback();
         installRouter((location: Location) => {
-            this.path = location.pathname
+            const page = location.pathname.slice(1);
+            lazyLoad(page);
+            this.page = page;
         });
         installOfflineWatcher((offline: boolean) => (this.isOffline = offline));
-        if (!this.path.slice(1)) {
-            this.path = `/${NORMAL}`;
+        if (!this.page) {
+            this.page = NORMAL;
+            lazyLoad(NORMAL);
             window.history.replaceState({}, '', `/${NORMAL}`);
         }
         notifications().subscribe((message: string) => {
             this.notification = message;
             setTimeout(() => {
-                this.notification = null
+                this.notification = null;
             }, 3000);
         });
 
-        firebase.auth().onAuthStateChanged((user) => {
-            if (user) {
-                this.user = user;
-            }
-        });
-        const actionCode: RegExpExecArray = new RegExp(/[?&]oobCode=([^&#]*)/)
-            .exec(window.location.search.slice(1));
-        if (actionCode) {
-            firebase.auth().applyActionCode(actionCode[1])
+        firebase.auth().onAuthStateChanged((user: User) => this.onAuthStateChanged(user));
+        this.processCode();
+    }
+
+    public onAuthStateChanged(user: User): void {
+        this.user = user;
+        if (!user) {
+            this.isAdmin = false;
+            return;
         }
+        this.user.getIdTokenResult()
+            .then((idToken: IdTokenResult) => {
+                this.isAdmin = !!idToken.claims.admin;
+            })
+    }
+
+    public processCode(): void {
+        const param: RegExpExecArray = CODE_REGEXP.exec(window.location.search.slice(1));
+        if (!param) { return; }
+        const code: string = param[1];
+        const auth: firebase.auth.Auth = firebase.auth();
+        auth.checkActionCode(code)
+            .then(() => {
+                return auth.applyActionCode(code);
+            })
+            .catch(() => {
+                notifications().notify('Bad email verification link');
+            })
     }
 
     public toggleMenu(): void {
-        this.active = !this.active
+        this.active = !this.active;
     }
 
     public loginFormToggle(): void {
-        this.isLoginFormOpened = !this.isLoginFormOpened;
+        if (!this.user) {
+            this.isLoginFormOpened = !this.isLoginFormOpened;
+        }
     }
 
     public signUp(): void {
@@ -117,31 +141,36 @@ export class AppComponent extends LitElement {
         // language=HTML
         return html`
         <header>
-        <div class="logo" @click="${() => this.loginFormToggle()}">Lotus</div>
-        <!--        <picture @click="${(): void => this.toggleMenu()}">
+        <div class="logo" @click="${(): void => this.loginFormToggle()}">Lotus</div>
+        <!--        
+        <picture @click="${(): void => this.toggleMenu()}">
             <source srcset="./images/logo-full.svg" media="(min-width: 600px)">
             <img src="./images/logo-short.svg" alt="Lotus">
-        </picture> -->
+        </picture>
+        -->
         <nav ?active="${this.active}">
-          <ul class="menu">
-            ${this.isAdmin ? html`
-            <li class="menu-item" ?active="${this.path === `/${DASHBOARD}`}">
-                <a class="link" href="${DASHBOARD}" @click="${(): void => this.toggleMenu()}">Заказы</a>
-            </li>` : ''}
-            <li class="menu-item" ?active="${this.path === `/${NORMAL}`}" >
-                <a class="link" href="${NORMAL}" @click="${(): void => this.toggleMenu()}">Обычная</a>
-            </li>
-            <li class="menu-item" ?active="${this.path === `/${WINDOWS}`}">
-                <a class="link" href="${WINDOWS}" @click="${(): void => this.toggleMenu()}">Окна</a>
-            </li>
-            <li class="menu-item" ?active="${this.path === `/${HELP}`}">
-                <a class="link" href="${HELP}" @click="${(): void => this.toggleMenu()}">Справка</a>
-            </li>
-          </ul>
+            <ul class="menu">
+                ${this.isAdmin ? html`
+                <li class="menu-item" ?active="${this.page === DASHBOARD}">
+                    <a class="link" href="${DASHBOARD}" @click="${(): void => this.toggleMenu()}">Заказы</a>
+                </li>` : ''}
+                <li class="menu-item" ?active="${this.page === NORMAL}" >
+                    <a class="link" href="${NORMAL}" @click="${(): void => this.toggleMenu()}">Обычная</a>
+                </li>
+                <li class="menu-item" ?active="${this.page === WINDOWS}">
+                    <a class="link" href="${WINDOWS}" @click="${(): void => this.toggleMenu()}">Окна</a>
+                </li>
+                <li class="menu-item" ?active="${this.page === HELP}">
+                    <a class="link" href="${HELP}" @click="${(): void => this.toggleMenu()}">Справка</a>
+                </li>
+            </ul>
+            ${this.user ? html`<button class="sign-out" @click="${(): void => this.signOut()}">Выйти</button>` : ''}
         </nav>
         <!--        <address>-->
         <!--            <a class="link" href="tel:+375445846206">+375 (44) 584 62 06</a>-->
         <!--        </address>-->
+        ${this.notification ? html`<div class="notification">${this.notification}</div>` : ''}
+        </header>
         ${!this.user ? html`
         <form class="login-form" ?opened="${this.isLoginFormOpened}">
             <input id="email" type="text" placeholder="email">
@@ -150,17 +179,14 @@ export class AppComponent extends LitElement {
                 <button type="button" class="sign-in" @click="${(): void => this.signIn()}">Войти</button>
                 <button type="button" class="sign-up" @click="${(): void => this.signUp()}">Зарегистрироваться</button>
             </div>
-        </form>` : html`
-        <button class="sign-out" @click="${(): void => this.signOut()}">Выйти</button>
-        `}
-        ${this.notification ? html`<div class="notification">${this.notification}</div>` : ''}
-        </header>
+        </form>` : ''}
+        
         ${this.isOffline ? html`<div class="offline-indicator">Offline</div>` : ''}
         
-        ${this.path === `/${NORMAL}` ? html`<normal-page></normal-page>` : ''}
-        ${this.path === `/${WINDOWS}` ? html`<windows-page></windows-page>` : ''}
-        ${this.path === `/${DASHBOARD}` ? html`<dashboard-page></dashboard-page>` : ''}
-        ${this.path === `/${HELP}` ? html`<help-page></help-page>` : ''}
+        ${this.page === NORMAL ? html`<normal-page></normal-page>` : ''}
+        ${this.page === WINDOWS ? html`<windows-page></windows-page>` : ''}
+        ${this.page === DASHBOARD ? html`<dashboard-page></dashboard-page>` : ''}
+        ${this.page === HELP ? html`<help-page></help-page>` : ''}
         
         <footer>
         <div class="info">УНП 500563252</div>
@@ -231,7 +257,6 @@ export class AppComponent extends LitElement {
             }
 
             .menu-item {
-                cursor: pointer;
                 padding: 10px;
             }
 
@@ -249,11 +274,13 @@ export class AppComponent extends LitElement {
                 justify-content: center;
                 flex-wrap: wrap;
                 position: absolute;
-                left: 20px;
-                right: 20px;
+                top: 80px;
+                left: calc(50% - 180px);
+                width: 320px;
+                height: 160px;
                 box-shadow: 0 0 5px -3px #000;
                 padding: 20px;
-                transform: translateX(calc(-100% - 25px));
+                transform: translateY(calc(-100% - 90px));
                 transition: .3s transform;
                 background: #fff;
             }
@@ -306,7 +333,6 @@ export class AppComponent extends LitElement {
             }
 
             .link:hover,
-            .menu-item:hover a,
             .menu-item[active] > a {
                 padding-bottom: 4px;
                 box-shadow: rgb(0, 0, 0) 0 2px 0 0;

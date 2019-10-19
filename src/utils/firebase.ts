@@ -1,5 +1,7 @@
-import firebase from '@firebase/app';
-import '@firebase/auth';
+import * as firebase from 'firebase';
+import 'firebase/app';
+import 'firebase/analytics';
+import 'firebase/auth';
 
 // Initialize Firebase
 const config = {

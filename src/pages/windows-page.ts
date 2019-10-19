@@ -1,5 +1,5 @@
 import { LitElement, html, TemplateResult, customElement, CSSResultArray, CSSResult, css } from 'lit-element';
-import './order-form';
+import '../components/order-form';
 import { pageStyle } from './page-style';
 
 @customElement('windows-page')

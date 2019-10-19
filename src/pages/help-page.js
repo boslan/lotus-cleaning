@@ -4,23 +4,19 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
-import { customElement, LitElement, html } from 'lit-element';
+import { LitElement, html, customElement } from 'lit-element';
+import '../components/order-form';
 import { pageStyle } from './page-style';
-let OrderFormComponent = class OrderFormComponent extends LitElement {
+let WindowsPage = class WindowsPage extends LitElement {
     static get styles() {
         return [pageStyle];
     }
     render() {
         // language=HTML
-        return html `
-        <form>
-            <label>Комнат: <input type="number"></label>
-            <label>Окон: <input type="number"></label>
-        </form>
-        `;
+        return html `Помощь`;
     }
 };
-OrderFormComponent = __decorate([
-    customElement('order-form')
-], OrderFormComponent);
-export { OrderFormComponent };
+WindowsPage = __decorate([
+    customElement('help-page')
+], WindowsPage);
+export { WindowsPage };

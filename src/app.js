@@ -9,14 +9,12 @@ import { installRouter } from './utils/router';
 import { installOfflineWatcher } from './utils/network';
 import { firebase } from './utils/firebase';
 import { notifications } from './utils/notifications';
-import './normal-page';
-import './windows-page';
-import './dashboard-page';
-import './help-page';
+import { lazyLoad } from "./utils/lazy-load";
 const NORMAL = 'normal';
 const WINDOWS = 'windows';
 const DASHBOARD = 'dashboard';
 const HELP = 'help';
+const CODE_REGEXP = new RegExp(/[?&]oobCode=([^&#]*)/);
 let AppComponent = class AppComponent extends LitElement {
     constructor() {
         super(...arguments);
@@ -28,11 +26,14 @@ let AppComponent = class AppComponent extends LitElement {
     connectedCallback() {
         super.connectedCallback();
         installRouter((location) => {
-            this.path = location.pathname;
+            const page = location.pathname.slice(1);
+            lazyLoad(page);
+            this.page = page;
         });
         installOfflineWatcher((offline) => (this.isOffline = offline));
-        if (!this.path.slice(1)) {
-            this.path = `/${NORMAL}`;
+        if (!this.page) {
+            this.page = NORMAL;
+            lazyLoad(NORMAL);
             window.history.replaceState({}, '', `/${NORMAL}`);
         }
         notifications().subscribe((message) => {
@@ -41,22 +42,42 @@ let AppComponent = class AppComponent extends LitElement {
                 this.notification = null;
             }, 3000);
         });
-        firebase.auth().onAuthStateChanged((user) => {
-            if (user) {
-                this.user = user;
-            }
-        });
-        const actionCode = new RegExp(/[?&]oobCode=([^&#]*)/)
-            .exec(window.location.search.slice(1));
-        if (actionCode) {
-            firebase.auth().applyActionCode(actionCode[1]);
+        firebase.auth().onAuthStateChanged((user) => this.onAuthStateChanged(user));
+        this.processCode();
+    }
+    onAuthStateChanged(user) {
+        this.user = user;
+        if (!user) {
+            this.isAdmin = false;
+            return;
         }
+        this.user.getIdTokenResult()
+            .then((idToken) => {
+            this.isAdmin = !!idToken.claims.admin;
+        });
+    }
+    processCode() {
+        const param = CODE_REGEXP.exec(window.location.search.slice(1));
+        if (!param) {
+            return;
+        }
+        const code = param[1];
+        const auth = firebase.auth();
+        auth.checkActionCode(code)
+            .then(() => {
+            return auth.applyActionCode(code);
+        })
+            .catch(() => {
+            notifications().notify('Bad email verification link');
+        });
     }
     toggleMenu() {
         this.active = !this.active;
     }
     loginFormToggle() {
-        this.isLoginFormOpened = !this.isLoginFormOpened;
+        if (!this.user) {
+            this.isLoginFormOpened = !this.isLoginFormOpened;
+        }
     }
     signUp() {
         const email = this.emailInput.value;
@@ -91,30 +112,35 @@ let AppComponent = class AppComponent extends LitElement {
         return html `
         <header>
         <div class="logo" @click="${() => this.loginFormToggle()}">Lotus</div>
-        <!--        <picture @click="${() => this.toggleMenu()}">
+        <!--        
+        <picture @click="${() => this.toggleMenu()}">
             <source srcset="./images/logo-full.svg" media="(min-width: 600px)">
             <img src="./images/logo-short.svg" alt="Lotus">
-        </picture> -->
+        </picture>
+        -->
         <nav ?active="${this.active}">
-          <ul class="menu">
-            ${this.isAdmin ? html `
-            <li class="menu-item" ?active="${this.path === `/${DASHBOARD}`}">
-                <a class="link" href="${DASHBOARD}" @click="${() => this.toggleMenu()}">Заказы</a>
-            </li>` : ''}
-            <li class="menu-item" ?active="${this.path === `/${NORMAL}`}" >
-                <a class="link" href="${NORMAL}" @click="${() => this.toggleMenu()}">Обычная</a>
-            </li>
-            <li class="menu-item" ?active="${this.path === `/${WINDOWS}`}">
-                <a class="link" href="${WINDOWS}" @click="${() => this.toggleMenu()}">Окна</a>
-            </li>
-            <li class="menu-item" ?active="${this.path === `/${HELP}`}">
-                <a class="link" href="${HELP}" @click="${() => this.toggleMenu()}">Справка</a>
-            </li>
-          </ul>
+            <ul class="menu">
+                ${this.isAdmin ? html `
+                <li class="menu-item" ?active="${this.page === DASHBOARD}">
+                    <a class="link" href="${DASHBOARD}" @click="${() => this.toggleMenu()}">Заказы</a>
+                </li>` : ''}
+                <li class="menu-item" ?active="${this.page === NORMAL}" >
+                    <a class="link" href="${NORMAL}" @click="${() => this.toggleMenu()}">Обычная</a>
+                </li>
+                <li class="menu-item" ?active="${this.page === WINDOWS}">
+                    <a class="link" href="${WINDOWS}" @click="${() => this.toggleMenu()}">Окна</a>
+                </li>
+                <li class="menu-item" ?active="${this.page === HELP}">
+                    <a class="link" href="${HELP}" @click="${() => this.toggleMenu()}">Справка</a>
+                </li>
+            </ul>
+            ${this.user ? html `<button class="sign-out" @click="${() => this.signOut()}">Выйти</button>` : ''}
         </nav>
         <!--        <address>-->
         <!--            <a class="link" href="tel:+375445846206">+375 (44) 584 62 06</a>-->
         <!--        </address>-->
+        ${this.notification ? html `<div class="notification">${this.notification}</div>` : ''}
+        </header>
         ${!this.user ? html `
         <form class="login-form" ?opened="${this.isLoginFormOpened}">
             <input id="email" type="text" placeholder="email">
@@ -123,17 +149,14 @@ let AppComponent = class AppComponent extends LitElement {
                 <button type="button" class="sign-in" @click="${() => this.signIn()}">Войти</button>
                 <button type="button" class="sign-up" @click="${() => this.signUp()}">Зарегистрироваться</button>
             </div>
-        </form>` : html `
-        <button class="sign-out" @click="${() => this.signOut()}">Выйти</button>
-        `}
-        ${this.notification ? html `<div class="notification">${this.notification}</div>` : ''}
-        </header>
+        </form>` : ''}
+        
         ${this.isOffline ? html `<div class="offline-indicator">Offline</div>` : ''}
         
-        ${this.path === `/${NORMAL}` ? html `<normal-page></normal-page>` : ''}
-        ${this.path === `/${WINDOWS}` ? html `<windows-page></windows-page>` : ''}
-        ${this.path === `/${DASHBOARD}` ? html `<dashboard-page></dashboard-page>` : ''}
-        ${this.path === `/${HELP}` ? html `<help-page></help-page>` : ''}
+        ${this.page === NORMAL ? html `<normal-page></normal-page>` : ''}
+        ${this.page === WINDOWS ? html `<windows-page></windows-page>` : ''}
+        ${this.page === DASHBOARD ? html `<dashboard-page></dashboard-page>` : ''}
+        ${this.page === HELP ? html `<help-page></help-page>` : ''}
         
         <footer>
         <div class="info">УНП 500563252</div>
@@ -203,7 +226,6 @@ let AppComponent = class AppComponent extends LitElement {
             }
 
             .menu-item {
-                cursor: pointer;
                 padding: 10px;
             }
 
@@ -221,11 +243,13 @@ let AppComponent = class AppComponent extends LitElement {
                 justify-content: center;
                 flex-wrap: wrap;
                 position: absolute;
-                left: 20px;
-                right: 20px;
+                top: 80px;
+                left: calc(50% - 180px);
+                width: 320px;
+                height: 160px;
                 box-shadow: 0 0 5px -3px #000;
                 padding: 20px;
-                transform: translateX(calc(-100% - 25px));
+                transform: translateY(calc(-100% - 90px));
                 transition: .3s transform;
                 background: #fff;
             }
@@ -278,7 +302,6 @@ let AppComponent = class AppComponent extends LitElement {
             }
 
             .link:hover,
-            .menu-item:hover a,
             .menu-item[active] > a {
                 padding-bottom: 4px;
                 box-shadow: rgb(0, 0, 0) 0 2px 0 0;
@@ -359,7 +382,7 @@ __decorate([
 ], AppComponent.prototype, "notification", void 0);
 __decorate([
     property()
-], AppComponent.prototype, "path", void 0);
+], AppComponent.prototype, "page", void 0);
 __decorate([
     property()
 ], AppComponent.prototype, "isAdmin", void 0);
