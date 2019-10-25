@@ -1,6 +1,6 @@
-import {customElement, LitElement, TemplateResult, html, property, CSSResult, css, query} from 'lit-element';
+import { customElement, LitElement, TemplateResult, html, property, CSSResult, css, query } from 'lit-element';
 
-export interface CounterDetail  {
+export interface CounterDetail {
     value: number;
 }
 
@@ -9,7 +9,7 @@ export class CounterInputComponent extends LitElement {
     @property()
     public label!: string;
 
-    @property({type: Number})
+    @property({ type: Number })
     public value = 1;
 
     @query('#input')
@@ -21,9 +21,9 @@ export class CounterInputComponent extends LitElement {
             <button class="btn-right" @click="${(): void => this.decValue()}">-</button>
             <div class="input-container">
                 <label>${this.label}</label>
-                <input id="input" type="number" .value="${this.value}" @input="${(): void => this.inputValue()}">
+                <input id="input" type="number" .value="${this.value}" @input="${(): void => this.inputValue()}" />
             </div>
-<!--            <div class="input">${this.label} ${this.value}</div>-->
+            <!--<div class="input">${this.label} ${this.value}</div>-->
             <button class="btn-left" @click="${(): void => this.incValue()}">+</button>
         `;
     }
@@ -34,23 +34,27 @@ export class CounterInputComponent extends LitElement {
     }
 
     public incValue(): void {
-        this.value+= 1;
-        this.changeValue()
+        this.value += 1;
+        this.changeValue();
     }
 
     public decValue(): void {
-        if (this.value > 1) { this.value-= 1; }
-        this.changeValue()
+        if (this.value > 1) {
+            this.value -= 1;
+        }
+        this.changeValue();
     }
 
     public changeValue(): void {
-        this.dispatchEvent(new CustomEvent<CounterDetail>('change', {
-            detail: {
-                value: this.value
-            },
-            bubbles: true,
-            composed: true
-        }))
+        this.dispatchEvent(
+            new CustomEvent<CounterDetail>('change', {
+                detail: {
+                    value: this.value,
+                },
+                bubbles: true,
+                composed: true,
+            }),
+        );
     }
 
     public static get styles(): CSSResult {
@@ -76,12 +80,12 @@ export class CounterInputComponent extends LitElement {
 
             .btn-right {
                 border-radius: 10px 0 0 10px;
-                box-shadow: 1px 0 0 0 rgba(0, 0, 0, .1);
+                box-shadow: 1px 0 0 0 rgba(0, 0, 0, 0.1);
             }
 
             .btn-left {
                 border-radius: 0 10px 10px 0;
-                box-shadow: -1px 0 0 0 rgba(0, 0, 0, .1);
+                box-shadow: -1px 0 0 0 rgba(0, 0, 0, 0.1);
             }
 
             label {
@@ -109,6 +113,6 @@ export class CounterInputComponent extends LitElement {
                 -webkit-appearance: none;
                 -moz-appearance: textfield;
             }
-        `
+        `;
     }
 }

@@ -1,10 +1,11 @@
-import {customElement, LitElement, html, TemplateResult, CSSResultArray, css, property} from 'lit-element';
+import { customElement, LitElement, html, TemplateResult, CSSResultArray, css, property } from 'lit-element';
 
 import './counter-input';
 import './day-selector';
-import {CounterDetail} from './counter-input';
-import {notifications} from '../utils/notifications';
+import { CounterDetail } from './counter-input';
+import { notifications } from '../utils/notifications';
 import { firebase } from '../utils/firebase';
+import { DaySelectorDetail } from './day-selector';
 
 @customElement('order-form')
 export class OrderFormComponent extends LitElement {
@@ -16,7 +17,7 @@ export class OrderFormComponent extends LitElement {
 
     public rate = {
         rooms: 10,
-        bathrooms: 10
+        bathrooms: 10,
     };
 
     constructor() {
@@ -40,7 +41,7 @@ export class OrderFormComponent extends LitElement {
         this.calcPrice();
     }
 
-    public setDate({ value }): void {
+    public setDate({ value }: DaySelectorDetail): void {
         this.date = value;
     }
 
@@ -53,66 +54,79 @@ export class OrderFormComponent extends LitElement {
     }
 
     public requestOrder(): void {
-        if (!this.validate()) { return; }
+        if (!this.validate()) {
+            return;
+        }
         const order = {
             rooms: this.rooms,
             bathrooms: this.bathrooms,
-            date: this.date
+            date: this.date,
         };
-        this.db.collection('orders').add(order)
+        this.db
+            .collection('orders')
+            .add(order)
             .then(() => {
-                notifications().notify('Заказ добавлен')
+                notifications().notify('Заказ добавлен');
             })
             .catch(() => {
-                notifications().notify('Ошибка при добавлении заказа. Проверьте интернет соединение.')
+                notifications().notify('Ошибка при добавлении заказа. Проверьте интернет соединение.');
             });
     }
-
 
     public render(): TemplateResult {
         // language=HTML
         return html`
-        <form>
-            <day-selector @date-change="${(e: CustomEvent) => this.setDate(e.detail)}"></day-selector>
-            <counter-input label="Комнат" @change="${(e: CustomEvent<CounterDetail>) => this.setRooms(e.detail)}"></counter-input>
-            <counter-input label="Санузлов" @change="${(e: CustomEvent<CounterDetail>) => this.setBathRooms(e.detail)}"></counter-input>
-            <div class="price">Стоимость: ${this.price} BYN</div>
-            <button type="button" @click="${() => this.requestOrder()}">Заказать</button>
-        </form>
+            <form>
+                <day-selector
+                    @date-change="${(e: CustomEvent<DaySelectorDetail>): void => this.setDate(e.detail)}"
+                ></day-selector>
+                <counter-input
+                    label="Комнат"
+                    @change="${(e: CustomEvent<CounterDetail>): void => this.setRooms(e.detail)}"
+                ></counter-input>
+                <counter-input
+                    label="Санузлов"
+                    @change="${(e: CustomEvent<CounterDetail>): void => this.setBathRooms(e.detail)}"
+                ></counter-input>
+                <div class="price">Стоимость: ${this.price} BYN</div>
+                <button type="button" @click="${(): void => this.requestOrder()}">Заказать</button>
+            </form>
         `;
     }
 
     // language=CSS
     static get styles(): CSSResultArray {
-        return [css`
-            form {
-                display: flex;
-                flex-flow: column;
-                align-items: center;
-            }
+        return [
+            css`
+                form {
+                    display: flex;
+                    flex-flow: column;
+                    align-items: center;
+                }
 
-            counter-input {
-                margin: 10px;
-            }
+                counter-input {
+                    margin: 10px;
+                }
 
-            button {
-                border-radius: 10px;
-                background-color: #ff950c;
-                color: white;
-                border: 0;
-                text-transform: uppercase;
-                padding: 16px 25px;
-                font-size: 20px;
-                cursor: pointer;
-                outline: none;
-            }
-            button:hover {
-                box-shadow: 0 0 10px 0 #ff950c;
-            }
-            
-            .price {
-                padding: 10px;
-            }
-        `];
+                button {
+                    border-radius: 10px;
+                    background-color: #ff950c;
+                    color: white;
+                    border: 0;
+                    text-transform: uppercase;
+                    padding: 16px 25px;
+                    font-size: 20px;
+                    cursor: pointer;
+                    outline: none;
+                }
+                button:hover {
+                    box-shadow: 0 0 10px 0 #ff950c;
+                }
+
+                .price {
+                    padding: 10px;
+                }
+            `,
+        ];
     }
 }

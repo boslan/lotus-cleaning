@@ -6,6 +6,7 @@
 		"module": "esnext",
 		"baseUrl": "/",
 		"lib": ["esnext", "dom"],
+		"strict": true,
 		"experimentalDecorators": true
 	},
 	"include": [

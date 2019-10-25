@@ -9,6 +9,8 @@ export class DashboardPage extends LitElement {
 
     public render(): TemplateResult {
         // language=HTML
-        return html`Панель управления`;
+        return html`
+            Панель управления
+        `;
     }
 }

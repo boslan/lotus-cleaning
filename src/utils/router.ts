@@ -1,14 +1,12 @@
 export const installRouter = (locationUpdatedCallback: (location: Location, event: Event | null) => void): void => {
     document.body.addEventListener('click', e => {
-        if (e.defaultPrevented || e.button !== 0 ||
-            e.metaKey || e.ctrlKey || e.shiftKey) return;
+        if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey) return;
 
-        const anchor = e.composedPath().filter(
-            n => (n as HTMLElement).tagName === 'A'
-        )[0] as HTMLAnchorElement | undefined;
-        if (!anchor || anchor.target ||
-            anchor.hasAttribute('download') ||
-            anchor.getAttribute('rel') === 'external') return;
+        const anchor = e.composedPath().filter(n => (n as HTMLElement).tagName === 'A')[0] as
+            | HTMLAnchorElement
+            | undefined;
+        if (!anchor || anchor.target || anchor.hasAttribute('download') || anchor.getAttribute('rel') === 'external')
+            return;
 
         const href = anchor.href;
         if (!href || href.indexOf('mailto:') !== -1) return;
@@ -20,10 +18,10 @@ export const installRouter = (locationUpdatedCallback: (location: Location, even
         e.preventDefault();
         if (href !== location.href) {
             window.history.pushState({}, '', href);
-            locationUpdatedCallback(location, e)
+            locationUpdatedCallback(location, e);
         }
     });
 
     window.addEventListener('popstate', e => locationUpdatedCallback(window.location, e));
-    locationUpdatedCallback(window.location, null /* event */)
+    locationUpdatedCallback(window.location, null /* event */);
 };

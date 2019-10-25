@@ -1,6 +1,6 @@
-import { customElement, LitElement, TemplateResult, html, css, CSSResult, property, query } from 'lit-element'
-import { installRouter } from './utils/router'
-import { installOfflineWatcher } from './utils/network'
+import { customElement, LitElement, TemplateResult, html, css, CSSResult, property, query } from 'lit-element';
+import { installRouter } from './utils/router';
+import { installOfflineWatcher } from './utils/network';
 
 import { firebase } from './utils/firebase';
 import { notifications } from './utils/notifications';
@@ -8,7 +8,7 @@ import { notifications } from './utils/notifications';
 import { User } from 'firebase';
 import IdTokenResult = firebase.auth.IdTokenResult;
 import UserCredential = firebase.auth.UserCredential;
-import {lazyLoad} from "./utils/lazy-load";
+import { lazyLoad } from './utils/lazy-load';
 
 const NORMAL = 'normal';
 const WINDOWS = 'windows';
@@ -38,7 +38,7 @@ export class AppComponent extends LitElement {
     public isAdmin = true;
 
     @property()
-    public user: User;
+    public user: User | null = null;
 
     @query('#email')
     public emailInput!: HTMLInputElement;
@@ -62,29 +62,30 @@ export class AppComponent extends LitElement {
         notifications().subscribe((message: string) => {
             this.notification = message;
             setTimeout(() => {
-                this.notification = null;
+                this.notification = '';
             }, 3000);
         });
 
-        firebase.auth().onAuthStateChanged((user: User) => this.onAuthStateChanged(user));
+        firebase.auth().onAuthStateChanged((user: User | null): void => this.onAuthStateChanged(user));
         this.processCode();
     }
 
-    public onAuthStateChanged(user: User): void {
+    public onAuthStateChanged(user: User | null): void {
         this.user = user;
         if (!user) {
             this.isAdmin = false;
             return;
         }
-        this.user.getIdTokenResult()
-            .then((idToken: IdTokenResult) => {
-                this.isAdmin = !!idToken.claims.admin;
-            })
+        user.getIdTokenResult().then((idToken: IdTokenResult) => {
+            this.isAdmin = !!idToken.claims.admin;
+        });
     }
 
     public processCode(): void {
-        const param: RegExpExecArray = CODE_REGEXP.exec(window.location.search.slice(1));
-        if (!param) { return; }
+        const param: RegExpExecArray | null = CODE_REGEXP.exec(window.location.search.slice(1));
+        if (!param) {
+            return;
+        }
         const code: string = param[1];
         const auth: firebase.auth.Auth = firebase.auth();
         auth.checkActionCode(code)
@@ -93,7 +94,7 @@ export class AppComponent extends LitElement {
             })
             .catch(() => {
                 notifications().notify('Bad email verification link');
-            })
+            });
     }
 
     public toggleMenu(): void {
@@ -109,89 +110,134 @@ export class AppComponent extends LitElement {
     public signUp(): void {
         const email: string = this.emailInput.value;
         const password: string = this.passwordInput.value;
-        firebase.auth().createUserWithEmailAndPassword(email, password)
-            .then((userCredential: UserCredential) => {
+        firebase
+            .auth()
+            .createUserWithEmailAndPassword(email, password)
+            .then(({ user }: UserCredential) => {
                 this.isLoginFormOpened = false;
-                return userCredential.user.sendEmailVerification();
+                if (user) {
+                    return user.sendEmailVerification();
+                }
             })
             .catch(() => {
-                notifications().notify(`Неправильное имя пользователя или пароль`)
+                notifications().notify(`Неправильное имя пользователя или пароль`);
             });
     }
 
     public signIn(): void {
         const email: string = this.emailInput.value;
         const password: string = this.passwordInput.value;
-        firebase.auth().signInWithEmailAndPassword(email, password)
+        firebase
+            .auth()
+            .signInWithEmailAndPassword(email, password)
             .then(() => {
                 this.isLoginFormOpened = false;
             })
             .catch(() => {
-                notifications().notify(`Неправильное имя пользователя или пароль`)
+                notifications().notify(`Неправильное имя пользователя или пароль`);
             });
     }
 
     public signOut(): void {
-        firebase.auth().signOut().then(() => {
-            this.user = null;
-        });
+        firebase
+            .auth()
+            .signOut()
+            .then(() => {
+                this.user = null;
+            });
     }
 
     public render(): TemplateResult {
         // language=HTML
         return html`
-        <header>
-        <div class="logo" @click="${(): void => this.loginFormToggle()}">Lotus</div>
-        <!--        
+            <header>
+                <div class="logo" @click="${(): void => this.loginFormToggle()}">Lotus</div>
+                <!--        
         <picture @click="${(): void => this.toggleMenu()}">
             <source srcset="./images/logo-full.svg" media="(min-width: 600px)">
             <img src="./images/logo-short.svg" alt="Lotus">
         </picture>
         -->
-        <nav ?active="${this.active}">
-            <ul class="menu">
-                ${this.isAdmin ? html`
-                <li class="menu-item" ?active="${this.page === DASHBOARD}">
-                    <a class="link" href="${DASHBOARD}" @click="${(): void => this.toggleMenu()}">Заказы</a>
-                </li>` : ''}
-                <li class="menu-item" ?active="${this.page === NORMAL}" >
-                    <a class="link" href="${NORMAL}" @click="${(): void => this.toggleMenu()}">Обычная</a>
-                </li>
-                <li class="menu-item" ?active="${this.page === WINDOWS}">
-                    <a class="link" href="${WINDOWS}" @click="${(): void => this.toggleMenu()}">Окна</a>
-                </li>
-                <li class="menu-item" ?active="${this.page === HELP}">
-                    <a class="link" href="${HELP}" @click="${(): void => this.toggleMenu()}">Справка</a>
-                </li>
-            </ul>
-            ${this.user ? html`<button class="sign-out" @click="${(): void => this.signOut()}">Выйти</button>` : ''}
-        </nav>
-        <!--        <address>-->
-        <!--            <a class="link" href="tel:+375445846206">+375 (44) 584 62 06</a>-->
-        <!--        </address>-->
-        ${this.notification ? html`<div class="notification">${this.notification}</div>` : ''}
-        </header>
-        ${!this.user ? html`
-        <form class="login-form" ?opened="${this.isLoginFormOpened}">
-            <input id="email" type="text" placeholder="email">
-            <input id="password" type="password" placeholder="password">
-            <div class="buttons-container">
-                <button type="button" class="sign-in" @click="${(): void => this.signIn()}">Войти</button>
-                <button type="button" class="sign-up" @click="${(): void => this.signUp()}">Зарегистрироваться</button>
-            </div>
-        </form>` : ''}
-        
-        ${this.isOffline ? html`<div class="offline-indicator">Offline</div>` : ''}
-        
-        ${this.page === NORMAL ? html`<normal-page></normal-page>` : ''}
-        ${this.page === WINDOWS ? html`<windows-page></windows-page>` : ''}
-        ${this.page === DASHBOARD ? html`<dashboard-page></dashboard-page>` : ''}
-        ${this.page === HELP ? html`<help-page></help-page>` : ''}
-        
-        <footer>
-        <div class="info">УНП 500563252</div>
-        </footer>
-        `
+                <nav ?active="${this.active}">
+                    <ul class="menu">
+                        ${this.isAdmin
+                            ? html`
+                                  <li class="menu-item" ?active="${this.page === DASHBOARD}">
+                                      <a class="link" href="${DASHBOARD}" @click="${(): void => this.toggleMenu()}"
+                                          >Заказы</a
+                                      >
+                                  </li>
+                              `
+                            : ''}
+                        <li class="menu-item" ?active="${this.page === NORMAL}">
+                            <a class="link" href="${NORMAL}" @click="${(): void => this.toggleMenu()}">Обычная</a>
+                        </li>
+                        <li class="menu-item" ?active="${this.page === WINDOWS}">
+                            <a class="link" href="${WINDOWS}" @click="${(): void => this.toggleMenu()}">Окна</a>
+                        </li>
+                        <li class="menu-item" ?active="${this.page === HELP}">
+                            <a class="link" href="${HELP}" @click="${(): void => this.toggleMenu()}">Справка</a>
+                        </li>
+                    </ul>
+                    ${this.user
+                        ? html`
+                              <button class="sign-out" @click="${(): void => this.signOut()}">Выйти</button>
+                          `
+                        : ''}
+                </nav>
+                <!--        <address>-->
+                <!--            <a class="link" href="tel:+375445846206">+375 (44) 584 62 06</a>-->
+                <!--        </address>-->
+                ${this.notification.length
+                    ? html`
+                          <div class="notification">${this.notification}</div>
+                      `
+                    : ''}
+            </header>
+            ${!this.user
+                ? html`
+                      <form class="login-form" ?opened="${this.isLoginFormOpened}">
+                          <input id="email" type="text" placeholder="email" />
+                          <input id="password" type="password" placeholder="password" />
+                          <div class="buttons-container">
+                              <button type="button" class="sign-in" @click="${(): void => this.signIn()}">Войти</button>
+                              <button type="button" class="sign-up" @click="${(): void => this.signUp()}">
+                                  Зарегистрироваться
+                              </button>
+                          </div>
+                      </form>
+                  `
+                : ''}
+            ${this.isOffline
+                ? html`
+                      <div class="offline-indicator">Offline</div>
+                  `
+                : ''}
+            ${this.page === NORMAL
+                ? html`
+                      <normal-page></normal-page>
+                  `
+                : ''}
+            ${this.page === WINDOWS
+                ? html`
+                      <windows-page></windows-page>
+                  `
+                : ''}
+            ${this.page === DASHBOARD
+                ? html`
+                      <dashboard-page></dashboard-page>
+                  `
+                : ''}
+            ${this.page === HELP
+                ? html`
+                      <help-page></help-page>
+                  `
+                : ''}
+
+            <footer>
+                <div class="info">УНП 500563252</div>
+            </footer>
+        `;
     }
 
     static get styles(): CSSResult {
@@ -236,7 +282,7 @@ export class AppComponent extends LitElement {
                 display: flex;
                 flex: 1;
                 justify-content: center;
-                
+
                 font-size: 24px;
                 text-transform: uppercase;
 
@@ -281,10 +327,10 @@ export class AppComponent extends LitElement {
                 box-shadow: 0 0 5px -3px #000;
                 padding: 20px;
                 transform: translateY(calc(-100% - 90px));
-                transition: .3s transform;
+                transition: 0.3s transform;
                 background: #fff;
             }
-            
+
             .login-form[opened] {
                 transform: none;
             }
@@ -396,6 +442,6 @@ export class AppComponent extends LitElement {
                     padding: 0 40px;
                 }
             }
-        `
+        `;
     }
 }

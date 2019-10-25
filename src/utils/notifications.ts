@@ -1,15 +1,17 @@
 class Notifications {
-    public listeners = [];
+    public listeners: ((message: string) => void)[] = [];
     public subscribe(callback: (message: string) => void): () => void {
         const listenerIndex: number = this.listeners.length;
         this.listeners.push(callback);
-        return (): void => { this.listeners.splice(listenerIndex, 1) };
+        return (): void => {
+            this.listeners.splice(listenerIndex, 1);
+        };
     }
 
     public notify(message: string): void {
         this.listeners.forEach((listener: (message: string) => void) => {
             listener(message);
-        })
+        });
     }
 }
 
