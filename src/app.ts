@@ -29,13 +29,13 @@ export class AppComponent extends LitElement {
     public isLoginFormOpened = false;
 
     @property()
-    public notification!: string;
+    public notification = '';
 
     @property()
     public page!: string;
 
     @property()
-    public isAdmin = true;
+    public isAdmin = false;
 
     @property()
     public user: User | null = null;
@@ -153,11 +153,11 @@ export class AppComponent extends LitElement {
             <header>
                 <div class="logo" @click="${(): void => this.loginFormToggle()}">Lotus</div>
                 <!--        
-        <picture @click="${(): void => this.toggleMenu()}">
-            <source srcset="./images/logo-full.svg" media="(min-width: 600px)">
-            <img src="./images/logo-short.svg" alt="Lotus">
-        </picture>
-        -->
+                <picture @click="${(): void => this.toggleMenu()}">
+                    <source srcset="./images/logo-full.svg" media="(min-width: 600px)">
+                    <img src="./images/logo-short.svg" alt="Lotus">
+                </picture>
+                -->
                 <nav ?active="${this.active}">
                     <ul class="menu">
                         ${this.isAdmin
@@ -194,50 +194,56 @@ export class AppComponent extends LitElement {
                       `
                     : ''}
             </header>
-            ${!this.user
-                ? html`
-                      <form class="login-form" ?opened="${this.isLoginFormOpened}">
-                          <input id="email" type="text" placeholder="email" />
-                          <input id="password" type="password" placeholder="password" />
-                          <div class="buttons-container">
-                              <button type="button" class="sign-in" @click="${(): void => this.signIn()}">Войти</button>
-                              <button type="button" class="sign-up" @click="${(): void => this.signUp()}">
-                                  Зарегистрироваться
-                              </button>
-                          </div>
-                      </form>
-                  `
-                : ''}
+            ${this.renderLoginForm()}
             ${this.isOffline
                 ? html`
                       <div class="offline-indicator">Offline</div>
                   `
                 : ''}
-            ${this.page === NORMAL
-                ? html`
-                      <normal-page></normal-page>
-                  `
-                : ''}
-            ${this.page === WINDOWS
-                ? html`
-                      <windows-page></windows-page>
-                  `
-                : ''}
-            ${this.page === DASHBOARD
-                ? html`
-                      <dashboard-page></dashboard-page>
-                  `
-                : ''}
-            ${this.page === HELP
-                ? html`
-                      <help-page></help-page>
-                  `
-                : ''}
-
+            ${this.renderPage()}
             <footer>
                 <div class="info">УНП 500563252</div>
             </footer>
         `;
+    }
+
+    public renderLoginForm(): TemplateResult | string {
+        const loginFormHtml: TemplateResult = html`
+            <form class="login-form" ?opened="${this.isLoginFormOpened}">
+                <input id="email" type="text" placeholder="email" />
+                <input id="password" type="password" placeholder="password" />
+                <div class="buttons-container">
+                    <button type="button" class="sign-in" @click="${(): void => this.signIn()}">Войти</button>
+                    <button type="button" class="sign-up" @click="${(): void => this.signUp()}">
+                        Зарегистрироваться
+                    </button>
+                </div>
+            </form>
+        `;
+        return !this.user ? loginFormHtml : '';
+    }
+
+    public renderPage(): TemplateResult | string {
+        switch (this.page) {
+            case NORMAL:
+                return html`
+                    <normal-page></normal-page>
+                `;
+            case WINDOWS:
+                return html`
+                    <windows-page></windows-page>
+                `;
+            case DASHBOARD:
+                return html`
+                    <dashboard-page></dashboard-page>
+                `;
+            case HELP:
+                return html`
+                    <help-page></help-page>
+                `;
+            default:
+                return '';
+        }
     }
 
     static get styles(): CSSResult {

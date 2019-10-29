@@ -104,7 +104,7 @@ export class DaySelector extends LitElement {
                     this.days,
                     (day: Date) => html`
                         <div
-                            class="day ${this.getSelectedDayClass(day)} ${this.getBusyDayClass(day, this.orders)}"
+                            class="day 1${this.getSelectedDayClass(day)} ${this.getBusyDayClass(day, this.orders)}"
                             @click="${() => this.onSelectDay(day)}"
                         >
                             ${day.getDate()}
