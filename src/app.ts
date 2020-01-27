@@ -9,6 +9,7 @@ import { User } from 'firebase';
 import IdTokenResult = firebase.auth.IdTokenResult;
 import UserCredential = firebase.auth.UserCredential;
 import { lazyLoad } from './utils/lazy-load';
+import {Observable} from "./core/observable";
 
 const NORMAL = 'normal';
 const WINDOWS = 'windows';
@@ -163,9 +164,9 @@ export class AppComponent extends LitElement {
                         ${this.isAdmin
                             ? html`
                                   <li class="menu-item" ?active="${this.page === DASHBOARD}">
-                                      <a class="link" href="${DASHBOARD}" @click="${(): void => this.toggleMenu()}"
-                                          >Заказы</a
-                                      >
+                                      <a class="link" href="${DASHBOARD}" @click="${(): void => this.toggleMenu()}">
+                                          Заказы
+                                      </a>
                                   </li>
                               `
                             : ''}
@@ -335,6 +336,7 @@ export class AppComponent extends LitElement {
                 transform: translateY(calc(-100% - 90px));
                 transition: 0.3s transform;
                 background: #fff;
+                z-index: 1;
             }
 
             .login-form[opened] {

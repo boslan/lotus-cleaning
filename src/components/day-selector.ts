@@ -2,9 +2,11 @@ import { customElement, LitElement, html, TemplateResult, property, CSSResult, c
 import { repeat } from 'lit-html/directives/repeat';
 import { firebase } from '../utils/firebase';
 
-import QueryDocumentSnapshot = firebase.firestore.QueryDocumentSnapshot;
-import QuerySnapshot = firebase.firestore.QuerySnapshot;
 import DocumentData = firebase.firestore.DocumentData;
+import { getStore } from '../services/data-service';
+import { Observable } from '../core/observable';
+import QuerySnapshot = firebase.firestore.QuerySnapshot;
+import QueryDocumentSnapshot = firebase.firestore.QueryDocumentSnapshot;
 
 export interface DaySelectorDetail {
     value: Date;
@@ -14,30 +16,32 @@ export interface DaySelectorDetail {
 export class DaySelector extends LitElement {
     public db = firebase.firestore();
     @property() public orders: DocumentData[] = [];
-    @property({ type: Array })
-    public days: Date[] = [];
+    @property({ type: Array }) public days: Date[] = [];
 
-    @property()
-    public week = 0;
+    @property() public week = 0;
 
     public today: Date = new Date();
 
-    @property({ type: Object })
-    public selectedDay?: Date;
+    @property({ type: Object }) public selectedDay?: Date;
+
+    @property() protected storeOrders!: Observable<DocumentData>;
 
     constructor() {
         super();
         this.showDays();
-        this.db
-            .collection('orders')
-            .get()
-            .then((querySnapshot: QuerySnapshot) => {
-                this.orders = [];
-                querySnapshot.forEach((doc: QueryDocumentSnapshot) => {
-                    const data = doc.data();
-                    this.orders.push(data);
-                });
+        this.storeOrders = getStore<DocumentData>('orders');
+        this.storeOrders.on((items: DocumentData[]) => {
+            this.orders = items;
+        });
+        this.db.collection('orders').onSnapshot((snapshot: QuerySnapshot) => {
+            this.orders = [];
+            const docs = snapshot.docs;
+            docs.forEach((doc: QueryDocumentSnapshot) => {
+                const data = doc.data();
+                this.orders.push(data);
             });
+            this.storeOrders.emit(this.orders);
+        });
     }
 
     public showDays(week = 0): void {
@@ -69,7 +73,7 @@ export class DaySelector extends LitElement {
             return '';
         }
         const currentDate = day.setHours(0, 0, 0, 0);
-        const isBusy = !!orders.find((order: any) => {
+        const isBusy = !!orders.find((order: DocumentData) => {
             const date = new Date(order.date.toDate()).setHours(0, 0, 0, 0);
             return currentDate === date;
         });
@@ -104,8 +108,8 @@ export class DaySelector extends LitElement {
                     this.days,
                     (day: Date) => html`
                         <div
-                            class="day 1${this.getSelectedDayClass(day)} ${this.getBusyDayClass(day, this.orders)}"
-                            @click="${() => this.onSelectDay(day)}"
+                            class="day ${this.getSelectedDayClass(day)} ${this.getBusyDayClass(day, this.orders)}"
+                            @click="${(): void => this.onSelectDay(day)}"
                         >
                             ${day.getDate()}
                         </div>

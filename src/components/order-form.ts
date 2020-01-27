@@ -6,6 +6,11 @@ import { CounterDetail } from './counter-input';
 import { notifications } from '../utils/notifications';
 import { firebase } from '../utils/firebase';
 import { DaySelectorDetail } from './day-selector';
+import { Observable } from '../core/observable';
+import DocumentData = firebase.firestore.DocumentData;
+import { getStore } from '../services/data-service';
+import DocumentReference = firebase.firestore.DocumentReference;
+import DocumentSnapshot = firebase.firestore.DocumentSnapshot;
 
 @customElement('order-form')
 export class OrderFormComponent extends LitElement {
@@ -14,6 +19,7 @@ export class OrderFormComponent extends LitElement {
     public rooms = 1;
     public bathrooms = 1;
     public date!: Date;
+    @property() protected storeOrders!: Observable<DocumentData>;
 
     public rate = {
         rooms: 10,
@@ -23,6 +29,7 @@ export class OrderFormComponent extends LitElement {
     constructor() {
         super();
         this.calcPrice();
+        this.storeOrders = getStore<DocumentData>('orders');
     }
 
     public calcPrice(): void {
@@ -65,8 +72,15 @@ export class OrderFormComponent extends LitElement {
         this.db
             .collection('orders')
             .add(order)
-            .then(() => {
+            .then((docRef: DocumentReference) => {
                 notifications().notify('Заказ добавлен');
+                return docRef.get();
+            })
+            .then((docSnapshot: DocumentSnapshot) => {
+                const order: DocumentData | undefined = docSnapshot.data();
+                if (order) {
+                    this.storeOrders.add(order);
+                }
             })
             .catch(() => {
                 notifications().notify('Ошибка при добавлении заказа. Проверьте интернет соединение.');
