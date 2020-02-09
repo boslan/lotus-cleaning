@@ -8,12 +8,8 @@ import { Observable } from '../core/observable';
 import QuerySnapshot = firebase.firestore.QuerySnapshot;
 import QueryDocumentSnapshot = firebase.firestore.QueryDocumentSnapshot;
 
-export interface DaySelectorDetail {
-    value: Date;
-}
-
-@customElement('day-selector')
-export class DaySelector extends LitElement {
+@customElement('day-selector-old')
+export class DaySelectorOld extends LitElement {
     public db = firebase.firestore();
     @property() public orders: DocumentData[] = [];
     @property({ type: Array }) public days: Date[] = [];
@@ -30,7 +26,7 @@ export class DaySelector extends LitElement {
         super();
         this.showDays();
         this.storeOrders = getStore<DocumentData>('orders');
-        this.storeOrders.on((items: DocumentData[]) => {
+        this.storeOrders.subscribe((items: DocumentData[]) => {
             this.orders = items;
         });
         this.db.collection('orders').onSnapshot((snapshot: QuerySnapshot) => {
@@ -55,13 +51,11 @@ export class DaySelector extends LitElement {
         }
     }
 
-    public onSelectDay(day: Date): void {
-        this.selectedDay = day;
+    public onSelectDay(date: Date): void {
+        this.selectedDay = date;
         this.dispatchEvent(
-            new CustomEvent<DaySelectorDetail>('date-change', {
-                detail: {
-                    value: day,
-                },
+            new CustomEvent<Date>('date-change', {
+                detail: date,
                 bubbles: true,
                 composed: true,
             }),

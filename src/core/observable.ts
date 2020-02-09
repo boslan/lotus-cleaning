@@ -2,12 +2,12 @@ export class Observable<T> {
     private data: T[] = [];
     private listeners: ((items: T[]) => void)[] = [];
 
-    on(callback: (items: T[]) => void): number {
+    subscribe(callback: (items: T[]) => void): number {
         this.listeners.push(callback);
         return this.listeners.length;
     }
 
-    off(id: number): void {
+    unsubscribe(id: number): void {
         this.listeners.splice(id, 1);
     }
 

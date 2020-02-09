@@ -1,11 +1,11 @@
 import { customElement, LitElement, html, TemplateResult, CSSResultArray, css, property } from 'lit-element';
 
+import './date-selector';
 import './counter-input';
-import './day-selector';
+import './day-selector-old';
 import { CounterDetail } from './counter-input';
 import { notifications } from '../utils/notifications';
 import { firebase } from '../utils/firebase';
-import { DaySelectorDetail } from './day-selector';
 import { Observable } from '../core/observable';
 import DocumentData = firebase.firestore.DocumentData;
 import { getStore } from '../services/data-service';
@@ -48,8 +48,8 @@ export class OrderFormComponent extends LitElement {
         this.calcPrice();
     }
 
-    public setDate({ value }: DaySelectorDetail): void {
-        this.date = value;
+    public setDate(date: Date): void {
+        this.date = date;
     }
 
     public validate(): boolean {
@@ -91,9 +91,9 @@ export class OrderFormComponent extends LitElement {
         // language=HTML
         return html`
             <form>
-                <day-selector
-                    @date-change="${(e: CustomEvent<DaySelectorDetail>): void => this.setDate(e.detail)}"
-                ></day-selector>
+                <cl-calendar
+                    @date-change="${({ detail }: CustomEvent<Date>): void => this.setDate(detail)}"
+                ></cl-calendar>
                 <counter-input
                     label="Комнат"
                     @change="${(e: CustomEvent<CounterDetail>): void => this.setRooms(e.detail)}"

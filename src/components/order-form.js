@@ -6,7 +6,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 };
 import { customElement, LitElement, html, css, property } from 'lit-element';
 import './counter-input';
-import './day-selector';
+import './day-selector-old';
 import { notifications } from '../utils/notifications';
 import { firebase } from '../utils/firebase';
 let OrderFormComponent = class OrderFormComponent extends LitElement {
