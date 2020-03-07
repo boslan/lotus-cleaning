@@ -1,15 +1,16 @@
 import { customElement, LitElement, TemplateResult, html, css, CSSResult, property, query } from 'lit-element';
-import { installRouter } from './utils/router';
-import { installOfflineWatcher } from './utils/network';
+import { installRouter } from './core/router';
+import { installOfflineWatcher } from './core/network';
 
-import { firebase } from './utils/firebase';
-import { notifications } from './utils/notifications';
+import { firebase } from './core/firebase';
+import { notifications } from './core/notifications';
+import './components/toggle-checkbox';
 
 import { User } from 'firebase';
 import IdTokenResult = firebase.auth.IdTokenResult;
 import UserCredential = firebase.auth.UserCredential;
-import { lazyLoad } from './utils/lazy-load';
-import {Observable} from "./core/observable";
+import { lazyLoad } from './core/lazy-load';
+import { classMap } from 'lit-html/directives/class-map';
 
 const NORMAL = 'normal';
 const WINDOWS = 'windows';
@@ -41,6 +42,9 @@ export class AppComponent extends LitElement {
     @property()
     public user: User | null = null;
 
+    @property()
+    public isDark = false;
+
     @query('#email')
     public emailInput!: HTMLInputElement;
 
@@ -69,6 +73,7 @@ export class AppComponent extends LitElement {
 
         firebase.auth().onAuthStateChanged((user: User | null): void => this.onAuthStateChanged(user));
         this.processCode();
+        this.detectTheme();
     }
 
     public onAuthStateChanged(user: User | null): void {
@@ -180,6 +185,9 @@ export class AppComponent extends LitElement {
                             <a class="link" href="${HELP}" @click="${(): void => this.toggleMenu()}">Справка</a>
                         </li>
                     </ul>
+                    <toggle-checkbox round .checked="${this.isDark}" @change="${() => this.switchTheme()}">
+                        Темная тема
+                    </toggle-checkbox>
                     ${this.user
                         ? html`
                               <button class="sign-out" @click="${(): void => this.signOut()}">Выйти</button>
@@ -189,11 +197,11 @@ export class AppComponent extends LitElement {
                 <!--        <address>-->
                 <!--            <a class="link" href="tel:+375445846206">+375 (44) 584 62 06</a>-->
                 <!--        </address>-->
-                ${this.notification.length
-                    ? html`
-                          <div class="notification">${this.notification}</div>
-                      `
-                    : ''}
+                ${html`
+                    <div class="notification ${classMap({ show: !!this.notification.length })}">
+                        ${this.notification}
+                    </div>
+                `}
             </header>
             ${this.renderLoginForm()}
             ${this.isOffline
@@ -202,10 +210,33 @@ export class AppComponent extends LitElement {
                   `
                 : ''}
             ${this.renderPage()}
-            <footer>
-                <div class="info">УНП 500563252</div>
-            </footer>
+            <footer></footer>
         `;
+    }
+
+    public detectTheme(): void {
+        const isOsDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const isAppDark = localStorage.getItem('theme') === 'dark';
+        const hasAppTheme = !!localStorage.getItem('theme');
+        const theme = isAppDark || (isOsDark && !hasAppTheme) ? 'dark' : 'light';
+        this.setTheme(theme);
+    }
+
+    public switchTheme() {
+        const currentTheme = localStorage.getItem('theme');
+        const nextTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        localStorage.setItem('theme', nextTheme);
+        this.setTheme(nextTheme);
+    }
+
+    public setTheme(theme: 'dark' | 'light'): void {
+        localStorage.setItem('theme', theme);
+        if (theme === 'dark') {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+        this.isDark = theme === 'dark';
     }
 
     public renderLoginForm(): TemplateResult | string {
@@ -255,6 +286,7 @@ export class AppComponent extends LitElement {
                 flex-flow: column;
                 justify-content: space-between;
                 height: 100%;
+                background: var(--color-primary);
             }
 
             header {
@@ -268,8 +300,8 @@ export class AppComponent extends LitElement {
             .menu {
                 display: flex;
                 align-items: center;
-                background: #fff;
-                color: #000;
+                background: var(--color-primary);
+                color: var(--color-on-primary);
             }
 
             picture,
@@ -314,7 +346,7 @@ export class AppComponent extends LitElement {
             }
 
             .link {
-                color: #000;
+                color: var(--color-on-primary);
                 font-style: normal;
                 text-decoration: none;
                 white-space: nowrap;
@@ -331,11 +363,11 @@ export class AppComponent extends LitElement {
                 left: calc(50% - 180px);
                 width: 320px;
                 height: 160px;
-                box-shadow: 0 0 5px -3px #000;
+                box-shadow: 0 0 5px -3px var(--color-on-primary);
                 padding: 20px;
                 transform: translateY(calc(-100% - 90px));
                 transition: 0.3s transform;
-                background: #fff;
+                background: var(--color-primary);
                 z-index: 1;
             }
 
@@ -349,28 +381,28 @@ export class AppComponent extends LitElement {
 
             .login-form input {
                 margin: 10px;
-                background: #fff;
-                color: #000;
+                background: var(--color-primary);
+                color: var(--color-on-primary);
                 border: 0;
                 padding: 8px 5px;
-                box-shadow: 0 1px 0 0 #000;
+                box-shadow: 0 1px 0 0 var(--color-primary);
                 outline: none;
             }
 
             .login-form input:focus {
-                box-shadow: 0 2px 0 0 #000;
+                box-shadow: 0 2px 0 0 var(--color-on-primary);
             }
 
             .sign-in,
             .sign-up,
             .sign-out {
-                margin: 5px;
-                background: #fff;
+                margin: 5px 12px;
+                background: var(--color-primary);
                 border: 0;
-                border-radius: 5px;
-                color: #000;
+                border-radius: var(--border-radius);
+                color: var(--color-on-primary);
                 padding: 5px 10px;
-                box-shadow: 0 0 0 1px #000;
+                box-shadow: 0 0 0 1px var(--color-on-primary);
                 cursor: pointer;
                 outline: none;
             }
@@ -378,7 +410,7 @@ export class AppComponent extends LitElement {
             .sign-in:hover,
             .sign-up:hover,
             .sign-out:hover {
-                box-shadow: 0 0 0 2px #000;
+                box-shadow: 0 0 0 2px var(--color-on-primary);
             }
 
             address {
@@ -389,7 +421,7 @@ export class AppComponent extends LitElement {
             .link:hover,
             .menu-item[active] > a {
                 padding-bottom: 4px;
-                box-shadow: rgb(0, 0, 0) 0 2px 0 0;
+                box-shadow: var(--color-on-primary) 0 2px 0 0;
                 outline: none;
             }
 
@@ -407,7 +439,7 @@ export class AppComponent extends LitElement {
                 text-align: center;
                 width: 100%;
                 color: white;
-                background-color: #930000;
+                background-color: var(--color-alert);
             }
 
             .notification {
@@ -416,10 +448,26 @@ export class AppComponent extends LitElement {
                 right: 20px;
                 left: 20px;
                 padding: 15px;
-                border-radius: 10px;
-                box-shadow: 0 0 5px 0 #930000;
-                color: white;
-                background-color: #930000;
+                border-radius: var(--border-radius);
+                box-shadow: 0 0 5px 0 var(--color-alert);
+                color: var(--color-primary);
+                background-color: var(--color-alert);
+                user-select: none;
+                transition: opacity 300ms;
+                display: none;
+            }
+            .notification.show {
+                display: block;
+                animation: show 300ms;
+            }
+
+            @keyframes show {
+                0% {
+                    opacity: 0;
+                }
+                100% {
+                    opacity: 1;
+                }
             }
 
             @media (min-width: 600px) {

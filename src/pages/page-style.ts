@@ -6,5 +6,7 @@ export const pageStyle = css`
         display: flex;
         flex: 1;
         padding: 15px;
+        color: var(--color-on-primary);
+        background: var(--color-primary);
     }
 `;

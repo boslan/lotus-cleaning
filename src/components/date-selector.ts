@@ -1,7 +1,7 @@
 import { LitElement, TemplateResult, html, CSSResult, css, property, customElement } from 'lit-element';
 import { ClassInfo, classMap } from 'lit-html/directives/class-map';
 import { repeat } from 'lit-html/directives/repeat';
-import { StyleInfo } from 'lit-html/directives/style-map';
+import { StyleInfo, styleMap } from 'lit-html/directives/style-map';
 
 @customElement('date-selector')
 export class DateSelector extends LitElement {
@@ -117,6 +117,7 @@ export class DateSelector extends LitElement {
     }
 
     protected renderMonth(): TemplateResult[] {
+        this.resetDatePointer();
         const weeks: TemplateResult[] = [];
         for (let i = 0; i <= this.weeks; i++) {
             weeks.push(this.renderWeek());
@@ -143,11 +144,28 @@ export class DateSelector extends LitElement {
             selected: this.isSelectedDate,
             current: this.isCurrentDate,
         };
+        const d: Date = new Date(this.year, this.month, this.datePointer);
+        const styleDate: StyleInfo = this.getStyleDate(d);
         return html`
-            <div class="day ${classMap(classes)}" @click="${() => (() => this.fireDateChange(date))()}">
+            <div
+                class="day ${classMap(classes)}"
+                style="${styleMap(styleDate)}"
+                @click="${() => (() => this.fireDateChange(date))()}"
+            >
                 ${dayInMonth}
             </div>
         `;
+    }
+
+    getStyleDate(date: Date): StyleInfo {
+        const markerNames = Object.keys(this.markedItems);
+        for (const markerName of markerNames) {
+            const hasMarker = this.markedItems[markerName].find(markerDate => markerDate.getTime() === date.getTime());
+            if (hasMarker) {
+                return this.markers[markerName];
+            }
+        }
+        return {};
     }
 
     get isSelectedDate(): boolean {
@@ -179,8 +197,8 @@ export class DateSelector extends LitElement {
                 font-family: var(--font-main), sans-serif;
                 font-size: 14px;
                 font-weight: normal;
-                color: var(--color-primary);
-                background-color: var(--color-background);
+                color: var(--color-on-primary);
+                background-color: var(--color-primary);
             }
 
             .week {
@@ -190,7 +208,7 @@ export class DateSelector extends LitElement {
 
             .day-names {
                 display: flex;
-                box-shadow: 0 1px 2px -2px var(--color-primary);
+                color: var(--color-on-primary);
             }
 
             .day-name {
@@ -205,25 +223,28 @@ export class DateSelector extends LitElement {
                 width: 2em;
                 height: 2em;
                 cursor: pointer;
-                border-radius: 50%;
+                border-radius: var(--border-radius);
             }
 
             .day {
                 align-items: center;
                 user-select: none;
-            }
-
-            .day:hover {
+                transition: box-shadow 0.3s, background-color 0.3s;
                 box-shadow: 0 0 4px -2px var(--color-primary);
             }
 
+            .day:hover {
+                box-shadow: 0 0 4px -2px var(--color-on-primary);
+            }
+
             .day.out-month {
-                color: var(--color-secondary);
+                color: var(--color-on-secondary);
+                pointer-events: none;
             }
 
             .day.current {
                 font-weight: 700;
-                color: var(--color-primary);
+                color: var(--color-on-primary);
             }
 
             .day.selected {
@@ -235,7 +256,7 @@ export class DateSelector extends LitElement {
                 justify-content: center;
                 padding: 10px;
                 font-size: 16px;
-                color: var(--color-primary);
+                color: var(--color-on-primary);
             }
         `;
     }

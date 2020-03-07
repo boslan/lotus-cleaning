@@ -9,11 +9,20 @@ export class CounterInputComponent extends LitElement {
     @property()
     public label!: string;
 
+    @property({ type: Boolean, reflect: true })
+    public focused = false;
+
     @property({ type: Number })
     public value = 1;
 
     @query('#input')
     public inputElement!: HTMLInputElement;
+
+    connectedCallback(): void {
+        super.connectedCallback();
+        this.addEventListener('focus', () => (this.focused = true));
+        this.addEventListener('blur', () => (this.focused = false));
+    }
 
     public render(): TemplateResult {
         // language=HTML
@@ -63,29 +72,45 @@ export class CounterInputComponent extends LitElement {
             :host {
                 display: flex;
                 flex-flow: row;
-                box-shadow: 0 0 4px -3px black;
-                border-radius: 10px;
-                color: #4a4a4a;
+                box-shadow: 0 0 5px -2px var(--color-on-primary);
+                border-radius: var(--border-radius);
+                color: var(--color-on-primary);
+                user-select: none;
+                transition: box-shadow 0.3s;
+            }
+
+            :host([focused]) {
+                box-shadow: 0 0 5px -1px var(--color-on-primary);
             }
 
             button {
-                border: none;
-                padding: 10px;
-                background-color: white;
+                border: 0;
+                padding: 0;
+                width: 30px;
+                background-color: var(--color-primary);
                 outline: none;
                 cursor: pointer;
                 position: relative;
-                color: #4a4a4a;
+                color: var(--color-on-primary);
+                box-sizing: border-box;
+                transition: box-shadow 0.3s;
+                box-shadow: 0 0 4px -2px var(--color-primary);
+            }
+
+            button:hover {
+                box-shadow: 0 0 4px -2px var(--color-on-primary);
+            }
+
+            button::-moz-focus-inner {
+                border: 0;
             }
 
             .btn-right {
-                border-radius: 10px 0 0 10px;
-                box-shadow: 1px 0 0 0 rgba(0, 0, 0, 0.1);
+                border-radius: var(--border-radius) 0 0 var(--border-radius);
             }
 
             .btn-left {
-                border-radius: 0 10px 10px 0;
-                box-shadow: -1px 0 0 0 rgba(0, 0, 0, 0.1);
+                border-radius: 0 var(--border-radius) var(--border-radius) 0;
             }
 
             label {
@@ -109,7 +134,8 @@ export class CounterInputComponent extends LitElement {
                 padding: 10px;
                 text-align: right;
                 outline: none;
-                color: #4a4a4a;
+                background: var(--color-primary);
+                color: var(--color-on-primary);
                 -webkit-appearance: none;
                 -moz-appearance: textfield;
             }
