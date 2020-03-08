@@ -1,4 +1,4 @@
-import { customElement, LitElement, html, TemplateResult, CSSResultArray, css, property } from 'lit-element';
+import { css, CSSResultArray, customElement, html, LitElement, property, TemplateResult } from 'lit-element';
 
 import './date-selector';
 import './counter-input';
@@ -6,12 +6,13 @@ import { CounterDetail } from './counter-input';
 import { notifications } from '../core/notifications';
 import { firebase } from '../core/firebase';
 import { Observable } from '../core/observable';
-import DocumentData = firebase.firestore.DocumentData;
 import { getStore } from '../services/data-service';
+import DocumentData = firebase.firestore.DocumentData;
 import DocumentReference = firebase.firestore.DocumentReference;
 import DocumentSnapshot = firebase.firestore.DocumentSnapshot;
 import QueryDocumentSnapshot = firebase.firestore.QueryDocumentSnapshot;
 import QuerySnapshot = firebase.firestore.QuerySnapshot;
+import { User } from 'firebase';
 
 @customElement('order-form')
 export class OrderFormComponent extends LitElement {
@@ -20,6 +21,7 @@ export class OrderFormComponent extends LitElement {
     public rooms = 1;
     public bathrooms = 1;
     public date!: Date;
+    @property() protected user: User | null = null;
     @property() protected storeOrders!: Observable<DocumentData>;
 
     public rate = {
@@ -31,6 +33,7 @@ export class OrderFormComponent extends LitElement {
     constructor() {
         super();
         this.calcPrice();
+        firebase.auth().onAuthStateChanged((user: User | null): User | null => (this.user = user));
         this.storeOrders = getStore<DocumentData>('orders');
         this.storeOrders.subscribe((items: DocumentData[]) => {
             this.busyOrders = items.map(item => {
@@ -71,8 +74,12 @@ export class OrderFormComponent extends LitElement {
     }
 
     public validate(): boolean {
+        if (!this.user) {
+            notifications().notify({ text: 'Войдти в свой аккаунт', type: 'error' });
+            return false;
+        }
         if (!this.date) {
-            notifications().notify('Дата не выбрана');
+            notifications().notify({ text: 'Дата не выбрана', type: 'error' });
             return false;
         }
         return true;
@@ -91,7 +98,7 @@ export class OrderFormComponent extends LitElement {
             .collection('orders')
             .add(order)
             .then((docRef: DocumentReference) => {
-                notifications().notify('Заказ добавлен');
+                notifications().notify({ text: 'Заказ добавлен', type: 'success' });
                 return docRef.get();
             })
             .then((docSnapshot: DocumentSnapshot) => {
@@ -101,7 +108,10 @@ export class OrderFormComponent extends LitElement {
                 }
             })
             .catch(() => {
-                notifications().notify('Ошибка при добавлении заказа. Проверьте интернет соединение.');
+                notifications().notify({
+                    text: 'Ошибка при добавлении заказа.',
+                    type: 'error',
+                });
             });
     }
 

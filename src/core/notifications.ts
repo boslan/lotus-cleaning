@@ -1,6 +1,6 @@
 class Notifications {
-    public listeners: ((message: string) => void)[] = [];
-    public subscribe(callback: (message: string) => void): () => void {
+    public listeners: ((notice: Notice) => void)[] = [];
+    public subscribe(callback: (notice: Notice) => void): () => void {
         const listenerIndex: number = this.listeners.length;
         this.listeners.push(callback);
         return (): void => {
@@ -8,9 +8,9 @@ class Notifications {
         };
     }
 
-    public notify(message: string): void {
-        this.listeners.forEach((listener: (message: string) => void) => {
-            listener(message);
+    public notify(notice: Notice): void {
+        this.listeners.forEach((listener: (notice: Notice) => void) => {
+            listener(notice);
         });
     }
 }

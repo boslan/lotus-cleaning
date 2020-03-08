@@ -10,7 +10,7 @@ import { User } from 'firebase';
 import IdTokenResult = firebase.auth.IdTokenResult;
 import UserCredential = firebase.auth.UserCredential;
 import { lazyLoad } from './core/lazy-load';
-import { classMap } from 'lit-html/directives/class-map';
+import { ifDefined } from 'lit-html/directives/if-defined';
 
 const NORMAL = 'normal';
 const WINDOWS = 'windows';
@@ -31,7 +31,7 @@ export class AppComponent extends LitElement {
     public isLoginFormOpened = false;
 
     @property()
-    public notification = '';
+    public notification: Notice | null = null;
 
     @property()
     public page!: string;
@@ -64,10 +64,10 @@ export class AppComponent extends LitElement {
             lazyLoad(NORMAL);
             window.history.replaceState({}, '', `/${NORMAL}`);
         }
-        notifications().subscribe((message: string) => {
-            this.notification = message;
+        notifications().subscribe((notice: Notice) => {
+            this.notification = notice;
             setTimeout(() => {
-                this.notification = '';
+                this.notification = null;
             }, 3000);
         });
 
@@ -99,7 +99,7 @@ export class AppComponent extends LitElement {
                 return auth.applyActionCode(code);
             })
             .catch(() => {
-                notifications().notify('Bad email verification link');
+                notifications().notify({ text: 'Неверная ссылка проверки email', type: 'error' });
             });
     }
 
@@ -107,7 +107,8 @@ export class AppComponent extends LitElement {
         this.active = !this.active;
     }
 
-    public loginFormToggle(): void {
+    public loginFormToggle(e: MouseEvent): void {
+        e.stopPropagation();
         if (!this.user) {
             this.isLoginFormOpened = !this.isLoginFormOpened;
         }
@@ -126,7 +127,7 @@ export class AppComponent extends LitElement {
                 }
             })
             .catch(() => {
-                notifications().notify(`Неправильное имя пользователя или пароль`);
+                notifications().notify({ text: 'Неправильное имя пользователя или пароль', type: 'error' });
             });
     }
 
@@ -140,7 +141,7 @@ export class AppComponent extends LitElement {
                 this.isLoginFormOpened = false;
             })
             .catch(() => {
-                notifications().notify(`Неправильное имя пользователя или пароль`);
+                notifications().notify({ text: 'Неправильное имя пользователя или пароль', type: 'error' });
             });
     }
 
@@ -153,11 +154,22 @@ export class AppComponent extends LitElement {
             });
     }
 
+    // language=HTML
     public render(): TemplateResult {
-        // language=HTML
         return html`
             <header>
-                <div class="logo" @click="${(): void => this.loginFormToggle()}">Lotus</div>
+                <div class="logo">
+                    <div class="logo-title">Lotus</div>
+                    <div>
+                        ${this.user
+                            ? html`
+                                  <a class="link" @click="${(): void => this.signOut()}">Выйти</a>
+                              `
+                            : html`
+                                  <a class="link" @click="${(e: MouseEvent): void => this.loginFormToggle(e)}">Войти</a>
+                              `}
+                    </div>
+                </div>
                 <!--        
                 <picture @click="${(): void => this.toggleMenu()}">
                     <source srcset="./images/logo-full.svg" media="(min-width: 600px)">
@@ -184,26 +196,18 @@ export class AppComponent extends LitElement {
                         <li class="menu-item" ?active="${this.page === HELP}">
                             <a class="link" href="${HELP}" @click="${(): void => this.toggleMenu()}">Справка</a>
                         </li>
-                        <li class="menu-item">
-                            <toggle-checkbox round .checked="${this.isDark}" @change="${() => this.switchTheme()}">
-                                Dark Side
-                            </toggle-checkbox>
-                        </li>
                     </ul>
-                    ${this.user
-                        ? html`
-                              <button class="sign-out" @click="${(): void => this.signOut()}">Выйти</button>
-                          `
-                        : ''}
                 </nav>
                 <!--        <address>-->
                 <!--            <a class="link" href="tel:+375445846206">+375 (44) 584 62 06</a>-->
                 <!--        </address>-->
-                ${html`
-                    <div class="notification ${classMap({ show: !!this.notification.length })}">
-                        ${this.notification}
-                    </div>
-                `}
+                ${this.notification
+                    ? html`
+                          <div class="notification ${ifDefined(this.notification?.type)}">
+                              <div class="">${this.notification?.text}</div>
+                          </div>
+                      `
+                    : ''}
             </header>
             ${this.renderLoginForm()}
             ${this.isOffline
@@ -212,7 +216,11 @@ export class AppComponent extends LitElement {
                   `
                 : ''}
             ${this.renderPage()}
-            <footer></footer>
+            <footer>
+                <toggle-checkbox round .checked="${this.isDark}" @change="${() => this.switchTheme()}">
+                    Dark Side
+                </toggle-checkbox>
+            </footer>
         `;
     }
 
@@ -302,6 +310,7 @@ export class AppComponent extends LitElement {
             .menu {
                 display: flex;
                 align-items: center;
+                justify-content: center;
                 background: var(--color-primary);
                 color: var(--color-on-primary);
             }
@@ -321,23 +330,27 @@ export class AppComponent extends LitElement {
 
             .logo {
                 display: flex;
-                flex: 1;
                 justify-content: center;
-
-                font-size: 24px;
-                text-transform: uppercase;
+                align-items: center;
 
                 margin: 1em;
                 cursor: pointer;
                 outline: none;
             }
+            .logo-title {
+                font-size: 24px;
+                text-transform: uppercase;
+                display: flex;
+                align-items: center;
+                margin-right: 10px;
+            }
 
             nav {
-                flex: 2;
-                align-items: flex-start;
+                flex-flow: row wrap;
             }
 
             .menu {
+                flex-flow: row wrap;
                 padding: 0;
                 margin: 0;
                 list-style-type: none;
@@ -404,7 +417,7 @@ export class AppComponent extends LitElement {
                 border-radius: var(--border-radius);
                 color: var(--color-on-primary);
                 padding: 5px 10px;
-                box-shadow: 0 0 0 1px var(--color-on-primary);
+                box-shadow: 0 0 1px 1px var(--color-on-primary);
                 cursor: pointer;
                 outline: none;
             }
@@ -412,7 +425,7 @@ export class AppComponent extends LitElement {
             .sign-in:hover,
             .sign-up:hover,
             .sign-out:hover {
-                box-shadow: 0 0 0 2px var(--color-on-primary);
+                box-shadow: 0 0 1px 2px var(--color-on-primary);
             }
 
             address {
@@ -428,7 +441,7 @@ export class AppComponent extends LitElement {
             }
 
             footer {
-                justify-content: flex-end;
+                padding: 5px;
             }
 
             .info {
@@ -441,7 +454,7 @@ export class AppComponent extends LitElement {
                 text-align: center;
                 width: 100%;
                 color: white;
-                background-color: var(--color-alert);
+                background-color: var(--color-alert-error);
             }
 
             .notification {
@@ -451,13 +464,29 @@ export class AppComponent extends LitElement {
                 left: 20px;
                 padding: 15px;
                 border-radius: var(--border-radius);
-                box-shadow: 0 0 5px 0 var(--color-alert);
                 color: hsl(0, 0%, 100%);
-                background-color: var(--color-alert);
                 user-select: none;
-                transition: opacity 300ms;
-                display: none;
+                display: block;
+                box-shadow: 0 0 5px 0 var(--color-alert-info);
+                background-color: var(--color-alert-info);
             }
+            .notification.info {
+                box-shadow: 0 0 5px 0 var(--color-alert-info);
+                background-color: var(--color-alert-info);
+            }
+            .notification.error {
+                box-shadow: 0 0 5px 0 var(--color-alert-error);
+                background-color: var(--color-alert-error);
+            }
+            .notification.success {
+                box-shadow: 0 0 5px 0 var(--color-alert-success);
+                background-color: var(--color-alert-success);
+            }
+            .notification.warning {
+                box-shadow: 0 0 5px 0 var(--color-alert-warning);
+                background-color: var(--color-alert-warning);
+            }
+
             .notification.show {
                 display: block;
                 animation: show 300ms;
