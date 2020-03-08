@@ -184,10 +184,12 @@ export class AppComponent extends LitElement {
                         <li class="menu-item" ?active="${this.page === HELP}">
                             <a class="link" href="${HELP}" @click="${(): void => this.toggleMenu()}">Справка</a>
                         </li>
+                        <li class="menu-item">
+                            <toggle-checkbox round .checked="${this.isDark}" @change="${() => this.switchTheme()}">
+                                Dark Side
+                            </toggle-checkbox>
+                        </li>
                     </ul>
-                    <toggle-checkbox round .checked="${this.isDark}" @change="${() => this.switchTheme()}">
-                        Темная тема
-                    </toggle-checkbox>
                     ${this.user
                         ? html`
                               <button class="sign-out" @click="${(): void => this.signOut()}">Выйти</button>
@@ -385,7 +387,7 @@ export class AppComponent extends LitElement {
                 color: var(--color-on-primary);
                 border: 0;
                 padding: 8px 5px;
-                box-shadow: 0 1px 0 0 var(--color-primary);
+                box-shadow: 0 1px 0 0 var(--color-on-secondary);
                 outline: none;
             }
 
