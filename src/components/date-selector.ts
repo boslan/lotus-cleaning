@@ -139,13 +139,15 @@ export class DateSelector extends LitElement {
     // language=HTML
     protected renderDate(date: number): TemplateResult {
         const dayInMonth: number = this.isCurrentMonth ? date : this.getDateInMonth(date);
+        const d: Date = new Date(this.year, this.month, this.datePointer);
+        const styleDate: StyleInfo = this.getStyleDate(d);
+        const hasStyle: boolean = Object.entries(styleDate).length !== 0;
         const classes: ClassInfo = {
             'out-month': !this.isCurrentMonth,
             selected: this.isSelectedDate,
             current: this.isCurrentDate,
+            busy: hasStyle,
         };
-        const d: Date = new Date(this.year, this.month, this.datePointer);
-        const styleDate: StyleInfo = this.getStyleDate(d);
         return html`
             <div
                 class="day ${classMap(classes)}"
@@ -249,6 +251,9 @@ export class DateSelector extends LitElement {
 
             .day.selected {
                 background-color: var(--color-secondary);
+            }
+            .day.busy {
+                pointer-events: none;
             }
 
             .month {

@@ -452,7 +452,7 @@ export class AppComponent extends LitElement {
                 padding: 15px;
                 border-radius: var(--border-radius);
                 box-shadow: 0 0 5px 0 var(--color-alert);
-                color: var(--color-primary);
+                color: hsl(0, 0%, 100%);
                 background-color: var(--color-alert);
                 user-select: none;
                 transition: opacity 300ms;
