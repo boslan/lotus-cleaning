@@ -25,23 +25,25 @@ export class NoticeBox extends LitElement {
             this.notification = notice;
             setTimeout(() => {
                 this.notification = null;
-            }, 3000);
+            }, 4000);
         });
     }
 
     static get styles(): CSSResult {
         //language=CSS
         return css`
-            .notification {
+            :host {
+                display: flex;
+                justify-content: center;
                 position: absolute;
-                top: calc(100% + 10px);
-                right: 20px;
-                left: 20px;
+                white-space: nowrap;
+            }
+            .notification {
+                flex: none;
                 padding: 15px;
                 border-radius: var(--border-radius);
                 color: hsl(0, 0%, 100%);
                 user-select: none;
-                display: block;
                 box-shadow: 0 0 5px 0 var(--color-alert-info);
                 background-color: var(--color-alert-info);
             }

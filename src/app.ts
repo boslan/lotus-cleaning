@@ -5,10 +5,10 @@ import { installOfflineWatcher } from './core/network';
 import { firebase } from './core/firebase';
 import { notifications } from './core/notifications';
 import './components/toggle-checkbox';
+import './components/notice-box';
 
 import { User } from 'firebase';
 import IdTokenResult = firebase.auth.IdTokenResult;
-import UserCredential = firebase.auth.UserCredential;
 import { lazyLoad } from './core/lazy-load';
 
 const NORMAL = 'normal';
@@ -150,13 +150,15 @@ export class AppComponent extends LitElement {
                 <!--            <a class="link" href="tel:+375445846206">+375 (44) 584 62 06</a>-->
                 <!--        </address>-->
             </header>
-            <notice-box></notice-box>
             ${this.isOffline
                 ? html`
                       <div class="offline-indicator">Offline</div>
                   `
                 : ''}
-            ${this.renderPage()}
+            <main>
+                <notice-box></notice-box>
+                ${this.renderPage()}
+            </main>
             <footer>
                 <toggle-checkbox round .checked="${this.isDark}" @change="${() => this.switchTheme()}">
                     Dark Side
@@ -238,6 +240,13 @@ export class AppComponent extends LitElement {
                 justify-content: center;
                 background: var(--color-primary);
                 color: var(--color-on-primary);
+            }
+
+            main {
+                display: flex;
+                position: relative;
+                justify-content: center;
+                flex: 1;
             }
 
             picture,
