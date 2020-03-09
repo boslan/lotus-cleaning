@@ -156,7 +156,6 @@ export class AppComponent extends LitElement {
                   `
                 : ''}
             <main>
-                <notice-box></notice-box>
                 ${this.renderPage()}
             </main>
             <footer>

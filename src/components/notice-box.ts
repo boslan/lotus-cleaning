@@ -36,7 +36,8 @@ export class NoticeBox extends LitElement {
                 display: flex;
                 justify-content: center;
                 position: absolute;
-                white-space: nowrap;
+                top: 60px;
+                z-index: 3;
             }
             .notification {
                 flex: none;

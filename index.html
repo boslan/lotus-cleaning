@@ -44,6 +44,8 @@
             }
             html,
             body {
+                display: flex;
+                justify-content: center;
                 width: 100vw;
                 height: 100vh;
                 background: var(--color-primary);
@@ -72,6 +74,7 @@
     </head>
     <body>
         <app-component></app-component>
+        <notice-box></notice-box>
         <div class="overlay"></div>
         <form class="auth-form" novalidate>
             <label><input id="email" autocomplete="username" placeholder="email"/></label>
