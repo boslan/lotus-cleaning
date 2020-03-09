@@ -1,6 +1,6 @@
 class Notifications {
-    public listeners: ((notice: Notice) => void)[] = [];
-    public subscribe(callback: (notice: Notice) => void): () => void {
+    listeners: ((notice: Notice) => void)[] = [];
+    subscribe(callback: (notice: Notice) => void): () => void {
         const listenerIndex: number = this.listeners.length;
         this.listeners.push(callback);
         return (): void => {
@@ -8,7 +8,7 @@ class Notifications {
         };
     }
 
-    public notify(notice: Notice): void {
+    notify(notice: Notice): void {
         this.listeners.forEach((listener: (notice: Notice) => void) => {
             listener(notice);
         });

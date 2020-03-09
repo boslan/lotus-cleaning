@@ -68,9 +68,20 @@
                 --color-on-secondary: hsl(0, 0%, 58%);
             }
         </style>
+        <link rel="stylesheet" href="style.css" />
     </head>
     <body>
         <app-component></app-component>
+        <div class="overlay"></div>
+        <form class="auth-form" novalidate>
+            <label><input id="email" autocomplete="username" placeholder="email"/></label>
+            <label><input id="password" autocomplete="current-password" placeholder="password" type="password"/></label>
+
+            <div class="buttons-container">
+                <button type="button" class="sign-in">Sign In</button>
+                <button type="button" class="sign-up">Sign Up</button>
+            </div>
+        </form>
         <noscript>
             Please enable JavaScript to view this website.
         </noscript>

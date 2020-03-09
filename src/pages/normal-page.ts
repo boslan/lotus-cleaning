@@ -16,7 +16,7 @@ export class NormalPage extends LitElement {
         ];
     }
 
-    public render(): TemplateResult {
+    render(): TemplateResult {
         // language=HTML
         return html`
             <order-form></order-form>

@@ -8,7 +8,7 @@ export class WindowsPage extends LitElement {
         return [pageStyle];
     }
 
-    public render(): TemplateResult {
+    render(): TemplateResult {
         // language=HTML
         return html`
             Окна

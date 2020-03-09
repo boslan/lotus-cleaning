@@ -7,7 +7,7 @@ export class DashboardPage extends LitElement {
         return [pageStyle];
     }
 
-    public render(): TemplateResult {
+    render(): TemplateResult {
         // language=HTML
         return html`
             Панель управления

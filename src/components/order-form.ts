@@ -16,15 +16,15 @@ import { User } from 'firebase';
 
 @customElement('order-form')
 export class OrderFormComponent extends LitElement {
-    public db = firebase.firestore();
-    @property() public price = 0;
-    public rooms = 1;
-    public bathrooms = 1;
-    public date!: Date;
+    db = firebase.firestore();
+    @property() price = 0;
+    rooms = 1;
+    bathrooms = 1;
+    date!: Date;
     @property() protected user: User | null = null;
     @property() protected storeOrders!: Observable<DocumentData>;
 
-    public rate = {
+    rate = {
         rooms: 10,
         bathrooms: 10,
     };
@@ -53,27 +53,27 @@ export class OrderFormComponent extends LitElement {
         });
     }
 
-    public calcPrice(): void {
+    calcPrice(): void {
         const roomsCost = this.rate.rooms * this.rooms;
         const bathroomsCost = this.rate.bathrooms * this.bathrooms;
         this.price = 30 + roomsCost + bathroomsCost;
     }
 
-    public setRooms({ value }: CounterDetail): void {
+    setRooms({ value }: CounterDetail): void {
         this.rooms = value || 0;
         this.calcPrice();
     }
 
-    public setBathRooms({ value }: CounterDetail): void {
+    setBathRooms({ value }: CounterDetail): void {
         this.bathrooms = value || 0;
         this.calcPrice();
     }
 
-    public setDate(date: Date): void {
+    setDate(date: Date): void {
         this.date = date;
     }
 
-    public validate(): boolean {
+    validate(): boolean {
         if (!this.user) {
             notifications().notify({ text: 'Войдти в свой аккаунт', type: 'error' });
             return false;
@@ -85,7 +85,7 @@ export class OrderFormComponent extends LitElement {
         return true;
     }
 
-    public requestOrder(): void {
+    requestOrder(): void {
         if (!this.validate()) {
             return;
         }
@@ -115,7 +115,7 @@ export class OrderFormComponent extends LitElement {
             });
     }
 
-    public render(): TemplateResult {
+    render(): TemplateResult {
         // language=HTML
         return html`
             <form>

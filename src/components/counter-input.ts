@@ -7,16 +7,16 @@ export interface CounterDetail {
 @customElement('counter-input')
 export class CounterInputComponent extends LitElement {
     @property()
-    public label!: string;
+    label!: string;
 
     @property({ type: Boolean, reflect: true })
-    public focused = false;
+    focused = false;
 
     @property({ type: Number })
-    public value = 1;
+    value = 1;
 
     @query('#input')
-    public inputElement!: HTMLInputElement;
+    inputElement!: HTMLInputElement;
 
     connectedCallback(): void {
         super.connectedCallback();
@@ -24,7 +24,7 @@ export class CounterInputComponent extends LitElement {
         this.addEventListener('blur', () => (this.focused = false));
     }
 
-    public render(): TemplateResult {
+    render(): TemplateResult {
         // language=HTML
         return html`
             <button class="btn-right" @click="${(): void => this.decValue()}">-</button>
@@ -37,24 +37,24 @@ export class CounterInputComponent extends LitElement {
         `;
     }
 
-    public inputValue(): void {
+    inputValue(): void {
         this.value = +this.inputElement.value;
         this.changeValue();
     }
 
-    public incValue(): void {
+    incValue(): void {
         this.value += 1;
         this.changeValue();
     }
 
-    public decValue(): void {
+    decValue(): void {
         if (this.value > 1) {
             this.value -= 1;
         }
         this.changeValue();
     }
 
-    public changeValue(): void {
+    changeValue(): void {
         this.dispatchEvent(
             new CustomEvent<CounterDetail>('change', {
                 detail: {
@@ -66,7 +66,7 @@ export class CounterInputComponent extends LitElement {
         );
     }
 
-    public static get styles(): CSSResult {
+    static get styles(): CSSResult {
         // language=CSS
         return css`
             :host {
