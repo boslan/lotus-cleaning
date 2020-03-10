@@ -30,4 +30,8 @@ export class Observable<T> {
         const items: T[] = [...this.data, item];
         this.emit(items);
     }
+
+    getItems(): T[] {
+        return this.data;
+    }
 }

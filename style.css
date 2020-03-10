@@ -17,11 +17,11 @@
     justify-content: center;
     flex-wrap: wrap;
     position: absolute;
-    top: calc(50% - 115px);
+    top: calc(50% - 135px);
     left: calc(50% - 160px);
     opacity: 0;
     width: 320px;
-    height: 190px;
+    height: 210px;
     box-sizing: border-box;
     box-shadow: 0 0 5px -3px var(--color-on-primary);
     padding: 20px;

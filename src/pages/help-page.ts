@@ -1,5 +1,4 @@
 import { LitElement, html, TemplateResult, customElement, CSSResultArray } from 'lit-element';
-import '../components/order-form';
 import { pageStyle } from './page-style';
 
 @customElement('help-page')

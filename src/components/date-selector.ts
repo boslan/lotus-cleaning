@@ -253,7 +253,6 @@ export class DateSelector extends LitElement {
                 background-color: var(--color-secondary);
             }
             .day.busy {
-                pointer-events: none;
             }
 
             .month {
