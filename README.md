@@ -5,10 +5,10 @@ PWA LitElements app for managing cleaning
 yarn install
 
 ## Start dev
-npm start
+npm run start
 
 ## Build
-polymer build
+npm run build
 
 ### Firebase deploy
 firebase deploy
